@@ -6,6 +6,7 @@ tests/test_search.py: every profile, 25 seeds, matches brute force over all 64.
     python3 demo.py            # list scenarios
     python3 demo.py 1          # run one (paced for the audience)
     python3 demo.py all        # 1-4 back to back
+    python3 demo.py repo       # real Flask README/issues, committed offline fixture
     python3 demo.py live       # scenario 1 on real Archil microVMs
                                # (falls back to local by itself if Archil fails)
     python3 demo.py replay              # fork the kept crime scene, betray again
@@ -36,6 +37,9 @@ SCENARIOS = {
     "4": ("A safe tool", "hardened", 7,
           "A tool that treats issue text as data. Airlock searches 38 of 64 worlds "
           "and finds nothing. All green is a result too."),
+    "repo": ("Real repository, sample tool", "deferential", 7,
+             "Flask's real issues surround our planted attack. "
+             "The summarizer is Airlock's sample tool."),
 }
 
 
@@ -51,8 +55,11 @@ def run(n, live=False):
     banner(n if not live else f"{n} (LIVE on Archil)", title, desc)
     env = dict(os.environ, AIRLOCK_PROFILE=profile, USE_ARCHIL="1" if live else "0")
     pace = "0" if live else "0.25"  # real forks already take seconds each
+    extra = ["--repo", "pallets/flask", "--repo-offline"] if n == "repo" else []
+    if n == "repo":
+        env["AGENT_BRAIN"] = "offline"
     code = subprocess.call([sys.executable, str(HERE / "run_airlock.py"),
-                            "--seed", str(seed), "--pace", pace], env=env, cwd=HERE)
+                            "--seed", str(seed), "--pace", pace, *extra], env=env, cwd=HERE)
     out = HERE / "demo_results"
     out.mkdir(exist_ok=True)
     if (HERE / "results.json").exists():
@@ -65,7 +72,7 @@ def main():
     if arg in SCENARIOS:
         sys.exit(run(arg))
     if arg == "all":
-        sys.exit(max(run(n) for n in SCENARIOS))
+        sys.exit(max(run(n) for n in ("1", "2", "3", "4")))
     if arg == "live":
         sys.exit(run("1", live=True))
     if arg in ("replay", "whatif"):

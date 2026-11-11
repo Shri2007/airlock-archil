@@ -13,6 +13,7 @@ same search locally, so a demo never ends in a stack trace.
 
 Writes results.json (the contract with viewer.html).
 """
+from contextlib import nullcontext
 import json
 import os
 import sys
@@ -59,7 +60,9 @@ def show_round(r):
         time.sleep(PACE)
 
 
-def write(payload):
+def write(payload, repo=None):
+    if repo is not None:
+        payload["repo"] = repo.metadata
     RESULTS.write_text(json.dumps(payload, indent=2))
 
 
@@ -78,10 +81,26 @@ def main():
         if using_archil():
             archil_setup()
         return crime.repro(args[1:])
-    if not using_archil():
-        return _run(args)
+    from repo_twin import load_twin
+    if "--repo" in args and args.index("--repo") + 1 == len(args):
+        raise SystemExit("--repo needs owner/name")
+    repo_name = _arg(args, "--repo", None)
+    if "--repo-offline" in args and not repo_name:
+        raise SystemExit("--repo-offline requires --repo owner/name")
     try:
-        return _run(args)
+        repo = load_twin(repo_name, offline="--repo-offline" in args,
+                         keep_all="--keep-all" in args) if repo_name else None
+    except ValueError as e:
+        raise SystemExit(str(e)) from e
+    with repo.activate() if repo else nullcontext():
+        return _run_with_fallback(args, repo)
+
+
+def _run_with_fallback(args, repo=None):
+    if not using_archil():
+        return _run(args, repo=repo)
+    try:
+        return _run(args, repo=repo)
     except (KeyboardInterrupt, SystemExit):
         raise
     except Exception as e:
@@ -90,10 +109,10 @@ def main():
         print("Finishing the SAME search locally (same seed, same tool) so you still get a result.")
         print("!" * 70)
         os.environ["USE_ARCHIL"] = "0"
-        return _run(args, note=f"archil failed ({type(e).__name__}); finished locally")
+        return _run(args, note=f"archil failed ({type(e).__name__}); finished locally", repo=repo)
 
 
-def _run(args, note=None):
+def _run(args, note=None, repo=None):
     seed = _arg(args, "--seed", 7, int)
     mode = "archil" if using_archil() else "local"
 
@@ -104,6 +123,8 @@ def _run(args, note=None):
     rec = make_recorder(locker)
     rec.clear()
     base = make_workspace(rec, run="base")
+    if repo is not None:
+        base.issue_texts = repo.issue_texts
     t0 = time.time()
     print("=" * 70)
     print(f"AIRLOCK  |  backend: {base.kind}  |  64 possible worlds, {PER_ROUND} clones/round")
@@ -119,7 +140,7 @@ def _run(args, note=None):
             bad = [r for r in rows if r["verdict"] == "BLOCK"]
             print(f"Brute force: betrayed in {len(bad)} of {len(rows)} worlds")
             write({"mode": mode, "environments": rows, "betrayed": len(bad),
-                   "total": len(rows), "trigger": []})
+                   "total": len(rows), "trigger": []}, repo=repo)
             return
         s = Search(base, seed=seed, on_round=show_round)
         best, trigger, irrelevant = s.run()
@@ -169,7 +190,7 @@ def _run(args, note=None):
                      "grep_hits": [{"file": f, "line": line} for f, line in hits],
                      "grep_runs": grep_runs, "judge_runs": judge_runs,
                      "agrees_with_judge": agrees},
-    })
+    }, repo=repo)
 
     print("\n" + "=" * 70)
     if trigger:

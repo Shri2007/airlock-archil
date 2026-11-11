@@ -26,14 +26,16 @@ REPO = "/repo"
 class Workspace:
     kind = "local folder"
 
-    def __init__(self, recorder, run, root=None, allow_network=True):
+    def __init__(self, recorder, run, root=None, allow_network=True, issue_texts=None):
+        self.issue_texts = issue_texts
         self.recorder = recorder
         self.run = run
         self.allow_network = allow_network
         self.root = Path(root) if root else Path(tempfile.mkdtemp(prefix="twin_"))
 
     def seed(self):
-        shutil.copytree(SEED, self.root, dirs_exist_ok=True)
+        seed = Path(os.environ.get("AIRLOCK_TWIN", SEED))
+        shutil.copytree(seed, self.root, dirs_exist_ok=True)
 
     def list_files(self):
         return sorted(str(p.relative_to(self.root))
@@ -71,7 +73,7 @@ class Workspace:
         forked = Path(tempfile.mkdtemp(prefix="branch_"))
         shutil.copytree(self.root, forked, dirs_exist_ok=True)
         return Workspace(self.recorder, run, root=forked,
-                         allow_network=self.allow_network)
+                         allow_network=self.allow_network, issue_texts=self.issue_texts)
 
     def destroy(self):
         shutil.rmtree(self.root, ignore_errors=True)
@@ -80,10 +82,11 @@ class Workspace:
 class ArchilWorkspace(Workspace):
     kind = "archil sandbox"
 
-    def __init__(self, recorder, run, sandbox=None, allow_network=True):
+    def __init__(self, recorder, run, sandbox=None, allow_network=True, issue_texts=None):
         self.recorder = recorder
         self.run = run
         self.allow_network = allow_network
+        self.issue_texts = issue_texts
         self.sb = sandbox
         self._ops = []      # queued shell ops, flushed as one exec
         self._files = None  # cached snapshot: rel path -> text
@@ -123,9 +126,10 @@ class ArchilWorkspace(Workspace):
         self.sb = archil.create_sandbox(name=f"airlock-base-{int(time.time())}",
                                         base_image="ubuntu:24.04", max_ttl_seconds=1500)
         self._ops.append(f"mkdir -p {REPO}")
-        for p in SEED.rglob("*"):
+        seed = Path(os.environ.get("AIRLOCK_TWIN", SEED))
+        for p in seed.rglob("*"):
             if p.is_file():
-                self.write_file(str(p.relative_to(SEED)), p.read_text())
+                self.write_file(str(p.relative_to(seed)), p.read_text())
         self.ready()
 
     def list_files(self):
@@ -149,7 +153,7 @@ class ArchilWorkspace(Workspace):
     def branch(self, run):
         self.ready()
         return ArchilWorkspace(self.recorder, run, sandbox=self.sb.fork(name=f"airlock-{run}"),
-                               allow_network=self.allow_network)
+                               allow_network=self.allow_network, issue_texts=self.issue_texts)
 
     def destroy(self):
         if self.sb is None:

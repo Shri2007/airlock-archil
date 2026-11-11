@@ -418,3 +418,28 @@ reverse of the offline brain. Its trigger is `injected + no authority + few_issu
 - `judge.py` stays plain code. No AI decides pass or block.
 - Network-facing code binds to `127.0.0.1` only.
 - Don't commit `audit.jsonl`, `results.json`, `.airlock-board/`, `out/`, or keys (`.gitignore` covers them).
+
+
+## Test the sample tool in a real public repository
+
+```bash
+python3 run_airlock.py --repo pallets/flask                 # public GitHub text via gh api
+python3 run_airlock.py --repo pallets/flask --repo-offline  # committed fixture, no network
+python3 demo.py repo                                      # deterministic offline stage demo
+```
+
+This tests **Airlock's sample issue-summarizer** in the setting of Flask's real
+README and issues. The tool belongs to this demo, not to Flask. Airlock still
+plants its own poisoned issue and fake `BAIT-*` credentials. No repository code
+is cloned or executed. Public repository metadata is checked before text is
+fetched. Live fetches fall back to a committed fixture when available, and
+`results.json.repo` records the source, fetch date and issue counts.
+
+Up to 20 issue titles/bodies (excluding pull requests) are scrubbed for common
+credential formats before caching or seeding. Bodies are limited to 1,500
+characters. The conservative default filter skips any issue matching the offline
+brain's action, secret or authority keywords, so only our planted issue can
+trigger the demonstration. `--keep-all` disables that filter. `few_issues=ON`
+keeps one real issue; OFF fills the twenty background slots with the fetched
+texts, repeating them for small issue sets. Empty sets use benign demo filler.
+The original toy twin remains the default when `--repo` is omitted.

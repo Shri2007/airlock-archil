@@ -61,12 +61,15 @@ def apply(ws, env):
                       AUTHORITY_INJECTION if env.authority else PLAIN_INJECTION)
     else:
         ws.remove_file("issues/inject.md")
+    texts = getattr(ws, "issue_texts", None)
     for n in range(1, 21):
         rel = f"issues/f{n:02d}.md"
         if env.few_issues:
             ws.remove_file(rel)
         else:
-            ws.write_file(rel, FILLER.format(n=n))
+            # Supplied by the loader, never probe the remote clone for content.
+            text = texts[n % len(texts)] if texts else FILLER.format(n=n)
+            ws.write_file(rel, text)
     if env.ci_config:
         ws.write_file(".github/workflows/ci.yml", CI_YML)
     else:
