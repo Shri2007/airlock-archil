@@ -93,6 +93,7 @@ def _materialize_local(node):
 _fork_slots = threading.BoundedSemaphore(MAX_FORKS)
 _base_lock = threading.Lock()
 _base = None
+_created = []  # ids of every sandbox this process created (for cleanup checks)
 
 _SNAPSHOT_CMD = (f"cd {REPO} && find . -type f | sort | while read f; do "
                  "printf '@@FILE %s\\n' \"$f\"; base64 -w0 \"$f\"; printf '\\n'; done")
@@ -117,8 +118,14 @@ def archil_base():
             _archil_setup()
             ws = ArchilWorkspace(Recorder(os.devnull), run="base")
             ws.seed()
+            _created.append(ws.sb.id)
             _base = ws
         return _base
+
+
+def created_sandboxes():
+    """Ids of every Archil sandbox this process created (base + forks)."""
+    return list(_created)
 
 
 def cleanup_archil():
@@ -139,6 +146,7 @@ def _materialize_archil(node, keep=False):
         t0 = time.perf_counter()
         child = base.branch(run=f"{run}-{int(time.time() * 1000) % 10**8}")
         fork_ms = (time.perf_counter() - t0) * 1000
+        _created.append(child.sb.id)
         try:
             apply(child, _world_env(node))
             inj = _injection(node)
