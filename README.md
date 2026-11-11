@@ -12,10 +12,12 @@ This README covers setup, architecture, and who builds what.
 
 ![Airlock viewer: the search round by round, with the trigger it pinned](docs/viewer.png)
 
+**Hosted replay of recorded runs:** http://shricharansriram.me/airlock-archil/ (static; it replays saved runs and cannot run Archil or the engine).
+
 `viewer.html` replays the search round by round: explore, climb, shrink. Serve the
 folder (`python3 -m http.server 8000 --bind 127.0.0.1`) and open `/viewer.html`.
 Keys: `H` opens a plain-English guide (it also opens on first visit), `R` replay, `S` skip to the end, `0` latest run, `1`-`4` the demo scenarios
-(after `python3 demo.py all`).
+(after `python3 demo.py all`). To refresh the hosted page after a new run: `python3 scripts/build_site.py`, then commit `docs/`. The build scrubs Archil sandbox and disk ids and refuses to write anything that looks like a real key.
 
 ---
 

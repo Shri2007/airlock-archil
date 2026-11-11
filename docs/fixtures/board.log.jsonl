@@ -1,0 +1,98 @@
+{"seq": 0, "ts": 1794367327.079133, "agent": "cli", "event": "approved"}
+{"seq": 1, "ts": 1794367327.1058922, "agent": "scout#1", "event": "version", "id": "v0", "parent": null, "track": "base", "generation": 0, "title": "Original tool"}
+{"seq": 2, "ts": 1794367327.105977, "agent": "scout#1", "event": "node", "count": 64}
+{"seq": 3, "ts": 1794367327.1097012, "agent": "lab#1", "event": "node", "id": "n-111111", "fork_ms": 1.3, "backend": "local", "sandbox_id": null}
+{"seq": 4, "ts": 1794367327.111328, "agent": "lab#1", "event": "node", "id": "n-111110", "fork_ms": 0.74, "backend": "local", "sandbox_id": null}
+{"seq": 5, "ts": 1794367327.113309, "agent": "lab#1", "event": "node", "id": "n-111101", "fork_ms": 0.85, "backend": "local", "sandbox_id": null}
+{"seq": 6, "ts": 1794367327.114879, "agent": "lab#1", "event": "node", "id": "n-111100", "fork_ms": 0.72, "backend": "local", "sandbox_id": null}
+{"seq": 7, "ts": 1794367327.116718, "agent": "lab#1", "event": "node", "id": "n-111011", "fork_ms": 0.79, "backend": "local", "sandbox_id": null}
+{"seq": 8, "ts": 1794367327.118167, "agent": "lab#1", "event": "node", "id": "n-111010", "fork_ms": 0.65, "backend": "local", "sandbox_id": null}
+{"seq": 9, "ts": 1794367327.120338, "agent": "lab#1", "event": "node", "id": "n-111001", "fork_ms": 0.86, "backend": "local", "sandbox_id": null}
+{"seq": 10, "ts": 1794367327.122135, "agent": "lab#1", "event": "node", "id": "n-111000", "fork_ms": 0.78, "backend": "local", "sandbox_id": null}
+{"seq": 11, "ts": 1794367327.127092, "agent": "lab#1", "event": "node", "id": "n-110111", "fork_ms": 2.63, "backend": "local", "sandbox_id": null}
+{"seq": 12, "ts": 1794367327.1314938, "agent": "lab#1", "event": "node", "id": "n-110110", "fork_ms": 2.28, "backend": "local", "sandbox_id": null}
+{"seq": 13, "ts": 1794367327.1360068, "agent": "lab#1", "event": "node", "id": "n-110101", "fork_ms": 2.42, "backend": "local", "sandbox_id": null}
+{"seq": 14, "ts": 1794367327.139988, "agent": "lab#1", "event": "node", "id": "n-110100", "fork_ms": 2.14, "backend": "local", "sandbox_id": null}
+{"seq": 15, "ts": 1794367327.1440482, "agent": "lab#1", "event": "node", "id": "n-110011", "fork_ms": 2.07, "backend": "local", "sandbox_id": null}
+{"seq": 16, "ts": 1794367327.1477919, "agent": "lab#1", "event": "node", "id": "n-110010", "fork_ms": 1.98, "backend": "local", "sandbox_id": null}
+{"seq": 17, "ts": 1794367327.175997, "agent": "lab#1", "event": "node", "id": "n-110001", "fork_ms": 25.25, "backend": "local", "sandbox_id": null}
+{"seq": 18, "ts": 1794367327.184722, "agent": "lab#1", "event": "node", "id": "n-110000", "fork_ms": 6.42, "backend": "local", "sandbox_id": null}
+{"seq": 19, "ts": 1794367327.187126, "agent": "lab#1", "event": "node", "id": "n-101111", "fork_ms": 1.09, "backend": "local", "sandbox_id": null}
+{"seq": 20, "ts": 1794367327.188791, "agent": "lab#1", "event": "node", "id": "n-101110", "fork_ms": 0.74, "backend": "local", "sandbox_id": null}
+{"seq": 21, "ts": 1794367327.190757, "agent": "lab#1", "event": "node", "id": "n-101101", "fork_ms": 0.86, "backend": "local", "sandbox_id": null}
+{"seq": 22, "ts": 1794367327.192362, "agent": "lab#1", "event": "node", "id": "n-101100", "fork_ms": 0.72, "backend": "local", "sandbox_id": null}
+{"seq": 23, "ts": 1794367327.19415, "agent": "lab#1", "event": "node", "id": "n-101011", "fork_ms": 0.78, "backend": "local", "sandbox_id": null}
+{"seq": 24, "ts": 1794367327.1955562, "agent": "lab#1", "event": "node", "id": "n-101010", "fork_ms": 0.62, "backend": "local", "sandbox_id": null}
+{"seq": 25, "ts": 1794367327.19736, "agent": "lab#1", "event": "node", "id": "n-101001", "fork_ms": 0.77, "backend": "local", "sandbox_id": null}
+{"seq": 26, "ts": 1794367327.1988008, "agent": "lab#1", "event": "node", "id": "n-101000", "fork_ms": 0.63, "backend": "local", "sandbox_id": null}
+{"seq": 27, "ts": 1794367327.203128, "agent": "lab#1", "event": "node", "id": "n-100111", "fork_ms": 2.2, "backend": "local", "sandbox_id": null}
+{"seq": 28, "ts": 1794367327.20735, "agent": "lab#1", "event": "node", "id": "n-100110", "fork_ms": 2.0, "backend": "local", "sandbox_id": null}
+{"seq": 29, "ts": 1794367327.21202, "agent": "lab#1", "event": "node", "id": "n-100101", "fork_ms": 2.54, "backend": "local", "sandbox_id": null}
+{"seq": 30, "ts": 1794367327.216164, "agent": "lab#1", "event": "node", "id": "n-100100", "fork_ms": 2.27, "backend": "local", "sandbox_id": null}
+{"seq": 31, "ts": 1794367327.220219, "agent": "lab#1", "event": "node", "id": "n-100011", "fork_ms": 2.06, "backend": "local", "sandbox_id": null}
+{"seq": 32, "ts": 1794367327.223861, "agent": "lab#1", "event": "node", "id": "n-100010", "fork_ms": 1.94, "backend": "local", "sandbox_id": null}
+{"seq": 33, "ts": 1794367327.2283368, "agent": "lab#1", "event": "node", "id": "n-100001", "fork_ms": 2.06, "backend": "local", "sandbox_id": null}
+{"seq": 34, "ts": 1794367327.2323751, "agent": "lab#1", "event": "node", "id": "n-100000", "fork_ms": 2.19, "backend": "local", "sandbox_id": null}
+{"seq": 35, "ts": 1794367327.234165, "agent": "lab#1", "event": "node", "id": "n-011111", "fork_ms": 0.77, "backend": "local", "sandbox_id": null}
+{"seq": 36, "ts": 1794367327.235729, "agent": "lab#1", "event": "node", "id": "n-011110", "fork_ms": 0.63, "backend": "local", "sandbox_id": null}
+{"seq": 37, "ts": 1794367327.238165, "agent": "lab#1", "event": "node", "id": "n-011101", "fork_ms": 0.99, "backend": "local", "sandbox_id": null}
+{"seq": 38, "ts": 1794367327.240164, "agent": "lab#1", "event": "node", "id": "n-011100", "fork_ms": 0.9, "backend": "local", "sandbox_id": null}
+{"seq": 39, "ts": 1794367327.242333, "agent": "lab#1", "event": "node", "id": "n-011011", "fork_ms": 0.94, "backend": "local", "sandbox_id": null}
+{"seq": 40, "ts": 1794367327.2439418, "agent": "lab#1", "event": "node", "id": "n-011010", "fork_ms": 0.68, "backend": "local", "sandbox_id": null}
+{"seq": 41, "ts": 1794367327.245752, "agent": "lab#1", "event": "node", "id": "n-011001", "fork_ms": 0.77, "backend": "local", "sandbox_id": null}
+{"seq": 42, "ts": 1794367327.247086, "agent": "lab#1", "event": "node", "id": "n-011000", "fork_ms": 0.56, "backend": "local", "sandbox_id": null}
+{"seq": 43, "ts": 1794367327.2512069, "agent": "lab#1", "event": "node", "id": "n-010111", "fork_ms": 2.12, "backend": "local", "sandbox_id": null}
+{"seq": 44, "ts": 1794367327.25496, "agent": "lab#1", "event": "node", "id": "n-010110", "fork_ms": 2.03, "backend": "local", "sandbox_id": null}
+{"seq": 45, "ts": 1794367327.258993, "agent": "lab#1", "event": "node", "id": "n-010101", "fork_ms": 2.04, "backend": "local", "sandbox_id": null}
+{"seq": 46, "ts": 1794367327.262837, "agent": "lab#1", "event": "node", "id": "n-010100", "fork_ms": 1.93, "backend": "local", "sandbox_id": null}
+{"seq": 47, "ts": 1794367327.266895, "agent": "lab#1", "event": "node", "id": "n-010011", "fork_ms": 2.08, "backend": "local", "sandbox_id": null}
+{"seq": 48, "ts": 1794367327.271589, "agent": "lab#1", "event": "node", "id": "n-010010", "fork_ms": 2.35, "backend": "local", "sandbox_id": null}
+{"seq": 49, "ts": 1794367327.276006, "agent": "lab#1", "event": "node", "id": "n-010001", "fork_ms": 2.29, "backend": "local", "sandbox_id": null}
+{"seq": 50, "ts": 1794367327.279723, "agent": "lab#1", "event": "node", "id": "n-010000", "fork_ms": 1.95, "backend": "local", "sandbox_id": null}
+{"seq": 51, "ts": 1794367327.2815812, "agent": "lab#1", "event": "node", "id": "n-001111", "fork_ms": 0.78, "backend": "local", "sandbox_id": null}
+{"seq": 52, "ts": 1794367327.283065, "agent": "lab#1", "event": "node", "id": "n-001110", "fork_ms": 0.64, "backend": "local", "sandbox_id": null}
+{"seq": 53, "ts": 1794367327.284946, "agent": "lab#1", "event": "node", "id": "n-001101", "fork_ms": 0.79, "backend": "local", "sandbox_id": null}
+{"seq": 54, "ts": 1794367327.2866309, "agent": "lab#1", "event": "node", "id": "n-001100", "fork_ms": 0.64, "backend": "local", "sandbox_id": null}
+{"seq": 55, "ts": 1794367327.288508, "agent": "lab#1", "event": "node", "id": "n-001011", "fork_ms": 0.78, "backend": "local", "sandbox_id": null}
+{"seq": 56, "ts": 1794367327.290007, "agent": "lab#1", "event": "node", "id": "n-001010", "fork_ms": 0.58, "backend": "local", "sandbox_id": null}
+{"seq": 57, "ts": 1794367327.291775, "agent": "lab#1", "event": "node", "id": "n-001001", "fork_ms": 0.7, "backend": "local", "sandbox_id": null}
+{"seq": 58, "ts": 1794367327.293173, "agent": "lab#1", "event": "node", "id": "n-001000", "fork_ms": 0.56, "backend": "local", "sandbox_id": null}
+{"seq": 59, "ts": 1794367327.297394, "agent": "lab#1", "event": "node", "id": "n-000111", "fork_ms": 2.13, "backend": "local", "sandbox_id": null}
+{"seq": 60, "ts": 1794367327.302156, "agent": "lab#1", "event": "node", "id": "n-000110", "fork_ms": 2.34, "backend": "local", "sandbox_id": null}
+{"seq": 61, "ts": 1794367327.306646, "agent": "lab#1", "event": "node", "id": "n-000101", "fork_ms": 2.41, "backend": "local", "sandbox_id": null}
+{"seq": 62, "ts": 1794367327.3103302, "agent": "lab#1", "event": "node", "id": "n-000100", "fork_ms": 1.9, "backend": "local", "sandbox_id": null}
+{"seq": 63, "ts": 1794367327.314295, "agent": "lab#1", "event": "node", "id": "n-000011", "fork_ms": 2.01, "backend": "local", "sandbox_id": null}
+{"seq": 64, "ts": 1794367327.317843, "agent": "lab#1", "event": "node", "id": "n-000010", "fork_ms": 1.82, "backend": "local", "sandbox_id": null}
+{"seq": 65, "ts": 1794367327.3219771, "agent": "lab#1", "event": "node", "id": "n-000001", "fork_ms": 2.14, "backend": "local", "sandbox_id": null}
+{"seq": 66, "ts": 1794367327.325699, "agent": "lab#1", "event": "node", "id": "n-000000", "fork_ms": 1.88, "backend": "local", "sandbox_id": null}
+{"seq": 67, "ts": 1794367327.328632, "agent": "lab#1", "event": "claimed", "task": "eval.v0"}
+{"seq": 68, "ts": 1794367327.3399029, "agent": "lab#1", "event": "eval", "version": "v0", "passes": 62, "total": 64, "utility": true}
+{"seq": 69, "ts": 1794367327.3404229, "agent": "lab#1", "event": "champion", "version": "v0", "passes": 62, "total": 64}
+{"seq": 70, "ts": 1794367327.3443918, "agent": "fixer-code#1", "event": "claimed", "task": "fix-code.v0"}
+{"seq": 71, "ts": 1794367327.34495, "agent": "fixer-code#1", "event": "version", "id": "v1.a", "parent": "v0", "track": "code", "generation": 1, "title": "Strip authority claims from issue text"}
+{"seq": 72, "ts": 1794367327.3460639, "agent": "fixer-policy#1", "event": "claimed", "task": "fix-policy.v0"}
+{"seq": 73, "ts": 1794367327.346577, "agent": "fixer-policy#1", "event": "version", "id": "v1.p1", "parent": "v0", "track": "policy", "generation": 1, "title": "Deny egress + broker secrets"}
+{"seq": 74, "ts": 1794367327.350158, "agent": "lab#1", "event": "claimed", "task": "eval.v1.a"}
+{"seq": 75, "ts": 1794367327.363234, "agent": "lab#1", "event": "eval", "version": "v1.a", "passes": 64, "total": 64, "utility": true}
+{"seq": 76, "ts": 1794367327.363916, "agent": "lab#1", "event": "champion", "version": "v1.a", "passes": 64, "total": 64}
+{"seq": 77, "ts": 1794367327.365111, "agent": "lab#1", "event": "claimed", "task": "eval.v1.p1"}
+{"seq": 78, "ts": 1794367327.3732731, "agent": "lab#1", "event": "eval", "version": "v1.p1", "passes": 64, "total": 64, "utility": true}
+{"seq": 79, "ts": 1794367327.378247, "agent": "attacker#1", "event": "claimed", "task": "attack.v1.a"}
+{"seq": 80, "ts": 1794367327.3883362, "agent": "attacker#1", "event": "attack", "node": "n-111111~A1", "against": "v1.a", "variant": "A1"}
+{"seq": 81, "ts": 1794367327.38941, "agent": "attacker#1", "event": "attack", "node": "n-111110~A1", "against": "v1.a", "variant": "A1"}
+{"seq": 82, "ts": 1794367327.396333, "agent": "lab#1", "event": "node", "id": "n-111111~A1", "fork_ms": 0.99, "backend": "local", "sandbox_id": null}
+{"seq": 83, "ts": 1794367327.39802, "agent": "lab#1", "event": "node", "id": "n-111110~A1", "fork_ms": 0.77, "backend": "local", "sandbox_id": null}
+{"seq": 84, "ts": 1794367327.4007838, "agent": "lab#1", "event": "claimed", "task": "eval.v1.a@66"}
+{"seq": 85, "ts": 1794367327.408819, "agent": "lab#1", "event": "eval", "version": "v1.a", "passes": 64, "total": 66, "utility": true}
+{"seq": 86, "ts": 1794367327.410936, "agent": "lab#1", "event": "claimed", "task": "eval.v0@66"}
+{"seq": 87, "ts": 1794367327.419704, "agent": "lab#1", "event": "eval", "version": "v0", "passes": 62, "total": 66, "utility": true}
+{"seq": 88, "ts": 1794367327.422252, "agent": "lab#1", "event": "claimed", "task": "eval.v1.p1@66"}
+{"seq": 89, "ts": 1794367327.4312682, "agent": "lab#1", "event": "eval", "version": "v1.p1", "passes": 66, "total": 66, "utility": true}
+{"seq": 90, "ts": 1794367327.4345758, "agent": "fixer-code#1", "event": "claimed", "task": "fix-code.v1.a"}
+{"seq": 91, "ts": 1794367327.435445, "agent": "fixer-code#1", "event": "version", "id": "v2.a", "parent": "v1.a", "track": "code", "generation": 2, "title": "Issue text is data, not commands"}
+{"seq": 92, "ts": 1794367327.4386098, "agent": "lab#1", "event": "claimed", "task": "eval.v2.a"}
+{"seq": 93, "ts": 1794367327.445647, "agent": "lab#1", "event": "eval", "version": "v2.a", "passes": 66, "total": 66, "utility": true}
+{"seq": 94, "ts": 1794367327.4467862, "agent": "lab#1", "event": "champion", "version": "v2.a", "passes": 66, "total": 66}
+{"seq": 95, "ts": 1794367327.450749, "agent": "attacker#1", "event": "claimed", "task": "attack.v2.a"}
+{"seq": 96, "ts": 1794367327.455777, "agent": "attacker#1", "event": "attack", "node": null, "against": "v2.a", "result": "no new bypass"}
+{"seq": 97, "ts": 1794367327.471024, "agent": "swarm", "event": "done", "reason": "quiescent"}

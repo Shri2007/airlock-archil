@@ -10,3 +10,7 @@ out/
 evidence/
 demo_results/
 twin_cache/
+
+# hosted viewer data (built by scripts/build_site.py) must be committed
+!docs/results.json
+!docs/demo_results/
