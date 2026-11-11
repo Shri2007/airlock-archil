@@ -247,3 +247,18 @@ Fixtures: `fixtures/results.scan.json` (real Phase 1 output),
 `fixtures/board.snapshot.json` + `fixtures/board.log.jsonl` (a finished run
 following section 5; the swarm agent regenerates them from a real
 `--deterministic` run once it works).
+
+---
+
+## 7. Additions after integration (all additive)
+
+- `versions/*.json` carry `fixes` (catalog fix ids in the lineage); eval tasks carry `priority`.
+- `scan/results.json` gains `swarm_profile` (the `brain.PROFILES` tool every version is built on).
+- `swarm.py up --forget` clears `memory/` first (otherwise a run starts from the last run's
+  fixes and attacks); `--root DIR` puts the board somewhere else (tests).
+- `swarm.py report` also writes `out/board.log.jsonl`; `viewer.html` (Tree view, key `T`,
+  `?view=tree`) replays it from `out/`, falling back to `fixtures/`.
+- `LocalBoard.log` holds an `fcntl.flock` on the log so separate peer processes never reuse a `seq`.
+- Fixers apply the same catalog to every profile; the tree shows when a fix helps, does
+  nothing (naive), or backfires (skeptic).
+

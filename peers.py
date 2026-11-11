@@ -139,8 +139,13 @@ class Scout(Role):
         src = HERE / "results.json"
         if not src.exists():
             src = HERE / "fixtures" / "results.scan.json"
-        board.put("scan/results.json", json.loads(src.read_text()))
+        scan = json.loads(src.read_text())
+        import brain
         import nodes
+        # The tool profile every version here is built on (brain.PROFILES); the
+        # copied Phase 1 scan may have come from a different one.
+        scan["swarm_profile"] = brain.profile()
+        board.put("scan/results.json", scan)
         ids = []
         for world in nodes.all_worlds():
             nid = nodes.node_id(world)

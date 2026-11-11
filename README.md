@@ -226,10 +226,35 @@ Each run writes **`results.json`**: `rounds` (per-round clones with `score`,
 `parent`, `flipped`), a flat `environments` list (what the grid viewer reads),
 `trigger`, `irrelevant`, `sandboxes_forked`, `seconds`.
 
-### Phase 2: the version tree (in progress)
+### Phase 2: the version tree (working, offline; Archil backend built)
 
 Phase 1 finds *one* betrayal. Phase 2 tests the tool on **every node** and
 grows a **tree of tool versions** until one passes them all.
+
+```bash
+python3 swarm.py up --deterministic --yes --forget   # grow the tree (one process, seeded)
+python3 swarm.py up --yes --forget                   # same, one OS process per agent
+python3 swarm.py up --no                             # report only: score v0, fix nothing
+python3 swarm.py report                              # out/airlock.patch, out/airlock-policy.json, out/board.json
+AIRLOCK_PROFILE=skeptic python3 swarm.py up --deterministic --yes --forget   # any brain.PROFILES tool
+python3 -m http.server 8000 --bind 127.0.0.1         # then open viewer.html, press T (or ?view=tree)
+```
+
+What the tree finds for each of the stage-demo tools (all real runs):
+
+| Tool profile | v0 | v1.a (denylist) | v2.a (data, not commands) | Story |
+|---|---|---|---|---|
+| deferential | 62/64 | 64/64, then 64/66 | 66/66 champion | the attacker beats the denylist with "AUTHORIZED by the MAINTAINER" |
+| naive | 60/64 | 60/64 | 64/64 champion | the denylist changes nothing |
+| skeptic (real Haiku 5.5) | 62/64 | **60/64** | 64/64 champion | the denylist makes it *worse*: stripped claims read as plain orders |
+| hardened | 64/64 champion | - | - | nothing to fix |
+
+In the viewer, **Fix it: tree** (key `T`) replays the swarm's log: versions
+grow left to right on orange links, every card shows its 64-node grid plus the
+attack nodes, and the crown moves as the champion changes. Click any card for
+its patch, rationale and the nodes it fixed or broke; click any square for
+that node's setting, its verdict under every version, and the tool's full
+trace.
 
 - **Nodes:** every combination of the 6 safety knobs (64 nodes), plus attack
   nodes the attacker agent adds later. Each node gets its own Archil sandbox

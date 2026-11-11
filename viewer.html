@@ -159,6 +159,94 @@
     .round { grid-template-columns: 1fr; } .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } .tag { display: none; }
   }
 </style>
+<style>
+  /* ---- Phase 2: the version tree (swarm.py) ---- */
+  :root { --orange: #e8834f; --orange-deep: #3a1f12; --orange-glow: rgba(232, 131, 79, .35); }
+  .treeview[hidden] { display: none; }
+  body.mode-tree .main { display: none; }
+  body.mode-tree .meter { visibility: hidden; }
+  .treeview { display: grid; grid-template-columns: minmax(0, 2.15fr) minmax(340px, 1fr); gap: 16px; align-items: start; }
+  .tcanvas { position: relative; border: 1px solid var(--line); background:
+      radial-gradient(1200px 500px at 20% 0%, rgba(232,131,79,.06), transparent 60%),
+      radial-gradient(circle at 1px 1px, #1b2621 1px, transparent 0) 0 0 / 22px 22px, var(--bg);
+    padding: 18px; min-height: 560px; overflow: hidden; }
+  .tcols { position: relative; z-index: 1; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(250px, 1fr); gap: 56px; align-items: start; }
+  .tcol { display: grid; gap: 22px; align-content: start; }
+  .tcol-h { font-size: 12px; letter-spacing: .16em; color: var(--mute); text-transform: uppercase; border-left: 3px solid var(--orange); padding: 2px 0 2px 10px; }
+  .tlinks { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 0; }
+  .tlinks path { fill: none; stroke: var(--orange); stroke-width: 1.6; opacity: .55; transition: stroke-dashoffset 1s cubic-bezier(.16,1,.3,1), opacity .4s; }
+  .tlinks path.pol { stroke-dasharray: 5 5 !important; opacity: .4; }
+  .tlinks path.champ { stroke-width: 2.6; opacity: 1; filter: drop-shadow(0 0 6px var(--orange-glow)); }
+  .vcard { position: relative; border: 1px solid var(--line); background: rgba(17,24,21,.92); padding: 12px 14px; display: grid; gap: 9px; cursor: pointer;
+           opacity: 0; transform: translateY(10px) scale(.98); transition: opacity .35s, transform .45s cubic-bezier(.16,1,.3,1), border-color .3s, box-shadow .3s; }
+  .vcard.on { opacity: 1; transform: none; }
+  .vcard:hover { border-color: var(--mute); }
+  .vcard.sel { border-color: var(--orange); box-shadow: 0 0 0 1px var(--orange), 0 8px 30px rgba(0,0,0,.4); }
+  .vcard:focus-visible { outline: 2px solid var(--orange); outline-offset: 3px; }
+  .vcard[data-track="policy"] { border-style: dashed; }
+  .vcard.allpass { border-color: #2c5a41; }
+  .vcard.champ { border-color: var(--orange); box-shadow: 0 0 0 1px var(--orange), 0 0 28px var(--orange-glow); }
+  .vcard.bump { animation: bump .5s cubic-bezier(.3,1.5,.5,1); }
+  .vhead { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .vid { font-size: 20px; font-weight: 700; }
+  .vtrack { font-size: 10.5px; letter-spacing: .14em; padding: 2px 6px; border: 1px solid var(--line); color: var(--mute); }
+  .vtrack.code { color: var(--orange); border-color: rgba(232,131,79,.5); } .vtrack.policy { color: #8fb7ff; border-color: #2b3f63; }
+  .vtitle { font-family: var(--sans); font-size: 14.5px; line-height: 1.3; color: var(--ink); min-height: 2.6em; }
+  .vscore { display: flex; align-items: baseline; gap: 6px; }
+  .vscore b { font-family: var(--sans); font-size: 30px; font-weight: 800; letter-spacing: -.02em; transition: color .3s; }
+  .vscore span { color: var(--mute); font-size: 13px; }
+  .vscore b.full { color: var(--green); } .vscore b.part { color: var(--ink); }
+  .vbar { height: 4px; background: var(--line); position: relative; overflow: hidden; }
+  .vbar i { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--green); transition: width .6s cubic-bezier(.16,1,.3,1), background .3s; }
+  .vmap { display: grid; grid-template-columns: repeat(16, 1fr); gap: 2px; }
+  .vmap i, .vatk i { aspect-ratio: 1; background: #17201c; transition: background .3s; cursor: pointer; }
+  .vmap i.p, .vatk i.p { background: #2c5a41; } .vmap i.f, .vatk i.f { background: var(--red); }
+  .vmap i:hover, .vatk i:hover { outline: 1px solid var(--ink); }
+  .vmap i.nsel, .vatk i.nsel { outline: 2px solid var(--orange); outline-offset: 1px; }
+  .vatk { display: flex; gap: 2px; align-items: center; min-height: 12px; }
+  .vatk i { width: calc((100% - 30px) / 16); box-shadow: inset 0 -2px 0 var(--orange); }
+  .vatk em { font-style: normal; font-size: 10px; letter-spacing: .12em; color: var(--orange); margin-right: 6px; }
+  .vfoot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 10px; font-size: 11.5px; color: var(--mute); }
+  .vfoot .bad { color: var(--red); } .vfoot .ok { color: var(--green); }
+  .crown { position: absolute; top: -11px; right: 12px; background: var(--orange); color: #1a0f08; font-size: 10.5px; font-weight: 700; letter-spacing: .14em; padding: 3px 8px; opacity: 0; transform: translateY(4px); transition: all .4s cubic-bezier(.3,1.5,.5,1); }
+  .vcard.champ .crown { opacity: 1; transform: none; }
+  /* inspector */
+  .tside { gap: 16px; max-height: calc(100dvh - 32px); overflow-y: auto; overflow-x: hidden; }
+  .tside > *, .tside div { min-width: 0; }
+  .ititle, .ip, .sub { overflow-wrap: anywhere; }
+  .vfoot span:first-child { white-space: nowrap; }
+  .tside .h { margin-bottom: 6px; }
+  .ibig { font-family: var(--sans); font-weight: 800; font-size: 54px; line-height: 1; letter-spacing: -.02em; }
+  .ibig span { color: var(--mute); font-size: 26px; font-weight: 600; }
+  .ititle { font-family: var(--sans); font-weight: 700; font-size: 21px; line-height: 1.25; }
+  .ip { color: var(--mute); font-size: 13.5px; line-height: 1.5; margin: 0; }
+  .ip b { color: var(--ink); font-weight: 600; }
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 13px; }
+  .kv dt { color: var(--mute); } .kv dd { margin: 0; color: var(--ink); min-width: 0; overflow-wrap: anywhere; }
+  .lin { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; color: var(--mute); }
+  .lin button, .nlink { background: transparent; border: 1px solid var(--line); color: var(--ink); padding: 3px 8px; cursor: pointer; font-size: 12.5px; }
+  .lin button:hover, .nlink:hover { border-color: var(--orange); color: var(--orange); }
+  .nlinks { display: flex; flex-wrap: wrap; gap: 5px; }
+  .nlink.f { border-color: var(--red); } .nlink.p { border-color: #2c5a41; }
+  .diff { max-width: 100%; margin: 0; font-size: 11.5px; line-height: 1.5; background: #0c1210; border: 1px solid var(--line); padding: 10px; overflow: auto; max-height: 300px; white-space: pre; }
+  .diff .a { color: var(--green); } .diff .d { color: var(--red); } .diff .m { color: var(--orange); }
+  .xrow { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 6px; }
+  .xcell { border: 1px solid var(--line); padding: 6px 8px; font-size: 12px; display: grid; gap: 3px; cursor: pointer; background: transparent; color: var(--ink); text-align: left; }
+  .xcell b { font-size: 13px; } .xcell.f { border-color: var(--red); background: var(--red-deep); } .xcell.p { border-color: #2c5a41; }
+  .xcell.cur { outline: 2px solid var(--orange); outline-offset: 1px; }
+  .trace { display: grid; gap: 0; border-left: 2px solid var(--line); margin-left: 4px; }
+  .trace div { position: relative; padding: 3px 0 3px 14px; font-size: 12.5px; color: var(--mute); }
+  .trace div::before { content: ""; position: absolute; left: -5px; top: 9px; width: 8px; height: 8px; background: var(--line); }
+  .trace div.k-read::before { background: var(--s1); } .trace div.k-obey::before { background: var(--s2); }
+  .trace div.k-egress::before { background: var(--red); } .trace div.k-egress-blocked::before { background: var(--s4); }
+  .trace div b { color: var(--ink); font-weight: 600; } .trace .leak { color: var(--red); }
+  .inj { margin: 0; font-size: 12px; line-height: 1.5; white-space: pre-wrap; background: var(--orange-deep); border: 1px solid rgba(232,131,79,.4); padding: 10px; color: #f6d2bd; }
+  .back { justify-self: start; }
+  .feed { display: grid; gap: 4px; font-size: 12px; color: var(--mute); max-height: 220px; overflow: auto; }
+  .feed div b { color: var(--ink); font-weight: 600; } .feed .ev-attack { color: var(--orange); } .feed .ev-champion b { color: var(--orange); }
+  @keyframes bump { 40% { transform: scale(1.03); } }
+  @media (max-width: 980px) { .treeview { grid-template-columns: 1fr; } .tcols { grid-auto-flow: row; gap: 24px; } .tlinks { display: none; } }
+</style>
 </head>
 <body>
 <div class="wrap" id="wrap">
@@ -196,6 +284,13 @@
       </div>
     </aside>
   </div>
+  <section class="treeview" id="treeView" aria-label="Phase 2: version tree" hidden>
+    <div class="tcanvas" id="tcanvas">
+      <svg class="tlinks" id="tlinks" aria-hidden="true"></svg>
+      <div class="tcols" id="tcols"></div>
+    </div>
+    <aside class="side tside" id="tside" aria-label="Inspector"></aside>
+  </section>
 </div>
 
 <dialog class="guide" id="guide" aria-labelledby="g-title">
@@ -415,7 +510,7 @@ function finish() {
 
 /* ---- load ---- */
 async function load(which) {
-  current = which; runToken++;
+  current = which; runToken++; document.body.classList.remove('mode-tree'); if (window.TREE) TREE.token++;
   [...$('keys').children].forEach(b => b.setAttribute('aria-pressed', String(b.dataset.k === which)));
   try {
     const url = which === '0' ? './results.json' : './demo_results/' + which + '.json';
@@ -439,17 +534,19 @@ async function setupKeys() {
   }));
   Object.entries(names).forEach(([k, v]) => { if (Array.isArray(v)) add(k, k + ' ' + v[0], 'Scenario ' + k + ' (' + k + ')'); });
 }
-$('replay').onclick = () => { instant = params.has('instant') || reduce; if (data) play(); };
+$('replay').onclick = () => { if (document.body.classList.contains('mode-tree')) { playTree(); return; }  instant = params.has('instant') || reduce; if (data) play(); };
 addEventListener('keydown', e => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   const k = e.key.toLowerCase();
   if (guide.open) { if (k === 'enter' || k === ' ') { e.preventDefault(); guide.close(); } return; }
+  if (document.body.classList.contains('mode-tree') && (k === 'r' || k === 's')) { if (k === 's') TREE.instant = true; playTree(); return; }
   if (k === 'h' || k === '?') openGuide();
   else if (k === 'r') $('replay').click();
   else if (k === 's' && data) { instant = true; play().then(() => { instant = params.has('instant') || reduce; }); }
   else if (/^[0-4]$/.test(k) && [...$('keys').children].some(b => b.dataset.k === k)) load(k);
+  else if (k === 't' && window.loadTree) loadTree();
 });
-let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (data) { const keep = instant; instant = true; play().then(() => { instant = keep; }); } }, 200); });
+let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (document.body.classList.contains('mode-tree')) { if (window.TREE) layoutLinks(); return; } if (data) { const keep = instant; instant = true; play().then(() => { instant = keep; }); } }, 200); });
 /* ---- guide ---- */
 const guide = $('guide');
 STEPS.forEach((s, n) => {
@@ -460,13 +557,245 @@ function openGuide() { runToken++; if (!guide.open) guide.showModal(); }
 $('help').onclick = openGuide;
 $('g-close').onclick = () => guide.close();
 guide.addEventListener('click', e => { if (e.target === guide) guide.close(); });
-guide.addEventListener('close', () => { try { localStorage.setItem('airlock-guide-seen', '1'); } catch (e) { /* private mode */ } if (data) play(); });
+guide.addEventListener('close', () => { try { localStorage.setItem('airlock-guide-seen', '1'); } catch (e) { /* private mode */ } if (data && !document.body.classList.contains('mode-tree')) play(); });
 let firstVisit = false;
 try { firstVisit = !localStorage.getItem('airlock-guide-seen'); } catch (e) { /* storage blocked */ }
 if (params.has('guide')) firstVisit = true;
 if (params.has('instant')) firstVisit = params.has('guide');
 if (firstVisit) openGuide();  // the replay starts when the guide closes
-setupKeys().then(() => load(params.get('run') || '0'));
+setupKeys().then(() => params.get('view') === 'tree' && window.loadTree ? loadTree() : load(params.get('run') || '0'));
+</script>
+<script>
+'use strict';
+/* ---- Phase 2: the version tree ----
+   Reads out/board.json + out/board.log.jsonl (written by `python3 swarm.py report`),
+   falling back to fixtures/. Replays the swarm's log so the tree grows in the order
+   it happened: versions appear, get scored on every node, the attacker adds nodes,
+   the champion moves. Click any version or any node cell to inspect it. */
+window.TREE = { snap: null, log: [], token: 0, cards: {}, sel: null, node: null, instant: params.has('instant') || reduce, src: '', done: false };
+const KN = ['injected', 'authority', 'few_issues', 'secret', 'network', 'ci_config'];
+
+async function getJSON(u) { const r = await fetch(u, { cache: 'no-store' }); if (!r.ok) throw new Error(u + ' HTTP ' + r.status); return r.json(); }
+async function getLines(u) {
+  const r = await fetch(u, { cache: 'no-store' }); if (!r.ok) throw new Error(u + ' HTTP ' + r.status);
+  return (await r.text()).split('\n').filter(l => l.trim()).map(l => JSON.parse(l));
+}
+const nodeIdx = id => parseInt(id.slice(2, 8), 2);              // n-111110 -> world index, same order as the rounds map
+const isAttack = id => id.includes('~');
+const tsleep = ms => TREE.instant ? Promise.resolve() : new Promise(r => setTimeout(r, ms));
+
+async function loadTree() {
+  runToken++; const token = ++TREE.token;
+  document.body.classList.add('mode-tree'); $('treeView').hidden = false;
+  [...$('keys').children].forEach(b => b.setAttribute('aria-pressed', String(b.dataset.k === 't')));
+  try {
+    try { TREE.snap = await getJSON('./out/board.json'); TREE.src = 'latest swarm run (out/)'; TREE.log = await getLines('./out/board.log.jsonl').catch(() => []); }
+    catch (e) { TREE.snap = await getJSON('./fixtures/board.snapshot.json'); TREE.src = 'recorded run (fixtures/)'; TREE.log = await getLines('./fixtures/board.log.jsonl').catch(() => []); }
+  } catch (e) {
+    $('tcols').textContent = ''; const s = el('div', 'state'); s.append('No swarm results yet. Run ', el('code', '', 'python3 swarm.py up --deterministic --yes --forget && python3 swarm.py report'));
+    $('tcols').appendChild(s); $('phase').textContent = 'NO TREE'; return;
+  }
+  if (token !== TREE.token) return;
+  if (!TREE.log.length) TREE.log = synthLog(TREE.snap);
+  buildTree(); await playTree();
+}
+
+function synthLog(s) {   // no log file: rebuild a plausible order from the snapshot
+  const ev = [], vs = [...s.versions].sort((a, b) => a.generation - b.generation || a.id.localeCompare(b.id));
+  vs.forEach(v => { ev.push({ event: 'version', id: v.id, parent: v.parent, track: v.track, generation: v.generation, title: v.title, agent: v.agent });
+    const e = s.evals.find(x => x.version === v.id); if (e) ev.push({ event: 'eval', version: v.id, passes: e.passes, total: e.total, utility: e.utility }); });
+  s.nodes.filter(n => n.origin === 'attack').forEach(n => ev.push({ event: 'attack', node: n.id, against: n.against, variant: n.variant && n.variant.id }));
+  if (s.champion) { const e = s.evals.find(x => x.version === s.champion); ev.push({ event: 'champion', version: s.champion, passes: e && e.passes, total: e && e.total }); }
+  ev.push({ event: 'done', reason: 'quiescent' });
+  return ev;
+}
+
+const V = id => TREE.snap.versions.find(v => v.id === id);
+const E = id => TREE.snap.evals.find(e => e.version === id);
+const N = id => TREE.snap.nodes.find(n => n.id === id);
+
+function buildTree() {
+  TREE.cards = {}; TREE.sel = null; TREE.node = null;
+  const cols = $('tcols'); cols.textContent = ''; $('tlinks').textContent = '';
+  const gens = [...new Set(TREE.snap.versions.map(v => v.generation))].sort((a, b) => a - b);
+  const colEls = {};
+  gens.forEach(g => { const c = el('div', 'tcol'); c.appendChild(el('div', 'tcol-h', g === 0 ? 'Gen 0 · the tool as written' : 'Gen ' + g + ' · fixes')); cols.appendChild(c); colEls[g] = c; });
+  const attacks = TREE.snap.nodes.filter(n => isAttack(n.id)).map(n => n.id);
+  TREE.snap.versions.forEach(v => {
+    const c = el('article', 'vcard'); c.dataset.track = v.track; c.dataset.vid = v.id; c.tabIndex = 0;
+    c.setAttribute('aria-label', 'Version ' + v.id + ': ' + v.title);
+    const head = el('div', 'vhead'); head.append(el('span', 'vid', v.id), el('span', 'vtrack ' + v.track, v.track === 'base' ? 'ORIGINAL' : v.track.toUpperCase()));
+    const score = el('div', 'vscore'); const pass = el('b', 'part', '–'); const tot = el('span', '', '/ – nodes pass'); score.append(pass, tot);
+    const bar = el('div', 'vbar'); const fill = el('i'); bar.appendChild(fill);
+    const map = el('div', 'vmap'); for (let i = 0; i < 64; i++) { const cell = el('i'); map.appendChild(cell); }
+    const atk = el('div', 'vatk'); atk.appendChild(el('em', '', 'ATTACKS'));
+    const foot = el('div', 'vfoot'); const ag = el('span', '', v.agent || ''); const ut = el('span', '', ''); foot.append(ag, ut);
+    c.append(el('div', 'crown', 'CHAMPION'), head, el('div', 'vtitle', v.title), score, bar, map, atk, foot);
+    c.addEventListener('click', ev => { const t = ev.target; if (t.dataset && t.dataset.nid) { inspectNode(t.dataset.nid, v.id); ev.stopPropagation(); } else inspectVersion(v.id); });
+    c.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); inspectVersion(v.id); } });
+    [...map.children].forEach((cell, i) => { const n = TREE.snap.nodes.find(x => !isAttack(x.id) && nodeIdx(x.id) === i); if (n) cell.dataset.nid = n.id; });
+    (colEls[v.generation] || cols).appendChild(c);
+    TREE.cards[v.id] = { c, pass, tot, fill, map, atk, ut, attacks: new Set() };
+  });
+  TREE.attackIds = attacks;
+  overview(false);
+}
+
+function paint(vid, passes, total) {
+  const k = TREE.cards[vid]; if (!k) return; const e = E(vid);
+  k.pass.textContent = passes; k.pass.className = passes === total ? 'full' : 'part';
+  k.tot.textContent = '/ ' + total + ' nodes pass';
+  k.fill.style.width = (100 * passes / total) + '%'; k.fill.style.background = passes === total ? 'var(--green)' : 'var(--s2)';
+  k.c.classList.toggle('allpass', passes === total);
+  if (e) {
+    [...k.map.children].forEach(cell => { const r = cell.dataset.nid && e.results[cell.dataset.nid]; cell.className = r ? (r.verdict === 'BLOCK' ? 'f' : 'p') : ''; });
+    [...k.atk.querySelectorAll('i')].forEach(cell => { const r = e.results[cell.dataset.nid]; cell.className = r ? (r.verdict === 'BLOCK' ? 'f' : 'p') : ''; });
+    k.ut.textContent = e.utility ? 'still does its job ✓' : 'broke the tool ✗'; k.ut.className = e.utility ? 'ok' : 'bad';
+  }
+  if (!TREE.instant) { k.c.classList.remove('bump'); void k.c.offsetWidth; k.c.classList.add('bump'); }
+}
+function addAttackCell(nid) {
+  Object.values(TREE.cards).forEach(k => { if (k.attacks.has(nid)) return; k.attacks.add(nid); const i = el('i'); i.dataset.nid = nid; i.title = nid; k.atk.appendChild(i); });
+}
+function crown(vid) { Object.entries(TREE.cards).forEach(([id, k]) => k.c.classList.toggle('champ', id === vid)); TREE.champ = vid; layoutLinks(); }
+function lineage(vid) { const out = []; let v = V(vid); while (v) { out.unshift(v.id); v = v.parent ? V(v.parent) : null; } return out; }
+
+function layoutLinks() {
+  const svg = $('tlinks'); if (!svg) return; svg.textContent = '';
+  const base = $('tcanvas').getBoundingClientRect(); const champLine = new Set(TREE.champ ? lineage(TREE.champ) : []);
+  TREE.snap.versions.forEach(v => {
+    if (!v.parent) return; const a = TREE.cards[v.parent], b = TREE.cards[v.id];
+    if (!a || !b || !b.c.classList.contains('on')) return;
+    const ra = a.c.getBoundingClientRect(), rb = b.c.getBoundingClientRect();
+    const x1 = ra.right - base.left, y1 = ra.top + ra.height / 2 - base.top, x2 = rb.left - base.left, y2 = rb.top + rb.height / 2 - base.top, mx = (x1 + x2) / 2;
+    const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    p.setAttribute('d', `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`);
+    p.setAttribute('class', (v.track === 'policy' ? 'pol' : '') + (champLine.has(v.id) && champLine.has(v.parent) ? ' champ' : ''));
+    svg.appendChild(p);
+    if (!b.drawn && !TREE.instant && v.track !== 'policy') { const L = p.getTotalLength(); p.style.strokeDasharray = L; p.style.strokeDashoffset = L; p.getBoundingClientRect(); p.style.strokeDashoffset = 0; }
+    b.drawn = true;
+  });
+}
+
+function feedLine(e) {
+  const f = $('tfeed'); if (!f) return; const d = el('div', 'ev-' + e.event); const who = el('b', '', (e.agent || '') + ' ');
+  const what = { version: () => (e.parent ? 'grew ' + e.id + ' from ' + e.parent : 'seeded ' + e.id) + ': ' + e.title, eval: () => e.version + ' scored ' + e.passes + '/' + e.total,
+    attack: () => e.node ? 'added ' + e.node + ' to beat ' + e.against : 'found nothing that beats ' + e.against, champion: () => 'champion → ' + e.version + ' (' + e.passes + '/' + e.total + ')',
+    approved: () => 'approved: fixers deployed', done: () => 'swarm quiet: done' }[e.event];
+  if (!what) return; d.append(who, what()); f.prepend(d);
+}
+
+async function playTree() {
+  const token = ++TREE.token; const alive = () => token === TREE.token;
+  if (!TREE.snap) return; TREE.done = false; TREE.live = null;
+  buildTree(); ['fg', 'fr'].forEach(f => $(f).classList.remove('ko', 'win', 'tired'));
+  const sc = TREE.snap.scan || {}; $('rname').textContent = 'TOOL: ' + String(sc.swarm_profile || sc.profile || 'under test').toUpperCase();
+  const ph = $('phase'), cap = $('caption');
+  ph.textContent = 'VERSION TREE'; ph.appendChild(el('small', '', 'every version x every node'));
+  cap.className = 'caption'; cap.textContent = 'Replaying the ' + TREE.src + '. Click any card or square to inspect it.';
+  await tsleep(600);
+  let nodes = 0;
+  for (const e of TREE.log) {
+    if (!alive()) return;
+    if (e.event === 'node') { if (e.id) { nodes++; if (nodes % 8 === 0 || nodes === 64) { cap.className = 'caption'; cap.textContent = 'Sandbox per node: ' + nodes + ' of ' + TREE.snap.nodes.filter(n => !isAttack(n.id)).length + ' worlds captured'; await tsleep(40); } } continue; }
+    if (e.event === 'version') { const k = TREE.cards[e.id]; if (k) { k.c.classList.add('on'); layoutLinks(); } cap.className = 'caption'; cap.textContent = (e.agent || 'swarm') + ' grew ' + e.id + (e.parent ? ' from ' + e.parent : '') + ': ' + e.title; if (e.parent) act('fg', 'jab'); feedLine(e); await tsleep(700); }
+    else if (e.event === 'eval') { paint(e.version, e.passes, e.total); cap.className = 'caption ' + (e.passes === e.total ? 'good' : 'bad'); cap.textContent = e.version + ' scored ' + e.passes + ' / ' + e.total + ' nodes' + (e.utility === false ? ' (but broke the tool)' : ''); if (e.passes < e.total) act('fr', 'jab'); else act('fg', 'block', 340); feedLine(e); await tsleep(650); }
+    else if (e.event === 'attack') { if (e.node) addAttackCell(e.node); cap.className = 'caption bad'; cap.textContent = e.node ? 'attacker added ' + e.node + ' to beat ' + e.against : 'attacker found nothing that beats ' + e.against; if (e.node) { act('fr', 'lunge', 600); setTimeout(() => { act('fg', 'hit'); if (!TREE.instant) { $('arena').classList.remove('flash'); void $('arena').offsetWidth; $('arena').classList.add('flash'); } }, 190); } feedLine(e); await tsleep(e.node ? 800 : 500); }
+    else if (e.event === 'champion') { crown(e.version); TREE.live = { version: e.version, passes: e.passes, total: e.total };
+      if ($('tbig') && !TREE.sel && !TREE.node) { $('tbig').firstChild.textContent = String(e.passes); $('tbig').lastChild.textContent = ' / ' + e.total; $('tsub').textContent = 'nodes pass with current champion ' + e.version + ': ' + V(e.version).title; } cap.className = 'caption good'; cap.textContent = 'champion → ' + e.version + '  (' + e.passes + ' / ' + e.total + ')'; feedLine(e); await tsleep(600); }
+    else if (e.event === 'approved' || e.event === 'done') { feedLine(e); }
+  }
+  if (!alive()) return;
+  // settle on the final state: every card shows its final eval
+  TREE.snap.versions.forEach(v => { const k = TREE.cards[v.id]; k.c.classList.add('on'); const e = E(v.id); if (e) paint(v.id, e.passes, e.total); });
+  TREE.attackIds.forEach(addAttackCell); TREE.snap.versions.forEach(v => { const e = E(v.id); if (e) paint(v.id, e.passes, e.total); });
+  crown(TREE.snap.champion);
+  const ce = E(TREE.snap.champion);
+  ph.textContent = TREE.snap.champion && ce && ce.passes === ce.total ? 'FIXED' : 'BEST SO FAR'; ph.appendChild(el('small', '', TREE.snap.versions.length + ' versions · ' + TREE.snap.nodes.length + ' nodes'));
+  cap.className = 'caption good'; cap.textContent = TREE.snap.champion ? 'Champion ' + TREE.snap.champion + ' passes ' + ce.passes + ' of ' + ce.total + ' nodes and still does its job.' : 'No champion yet.';
+  if (ce && ce.passes === ce.total) { $('fr').classList.add('ko'); $('fg').classList.add('win'); }
+  TREE.instant = false; TREE.done = true;
+  if (!TREE.sel && !TREE.node) overview(true);
+}
+
+/* ---- inspector ---- */
+function side(...kids) { const s = $('tside'); s.textContent = ''; kids.flat().filter(Boolean).forEach(k => s.appendChild(k)); s.scrollTop = 0; }
+function sec(title, ...kids) { const d = el('div'); d.appendChild(el('p', 'h', title)); kids.flat().filter(Boolean).forEach(k => d.appendChild(k)); return d; }
+function kv(pairs) { const d = el('dl', 'kv'); pairs.forEach(([k, v]) => { if (v == null || v === '') return; d.append(el('dt', '', k)); const dd = el('dd'); dd.append(v); d.append(dd); }); return d; }
+function backBtn() { const b = el('button', 'key back', '← overview'); b.onclick = () => { TREE.sel = null; TREE.node = null; mark(); overview(); }; return b; }
+function mark() {
+  Object.entries(TREE.cards).forEach(([id, k]) => k.c.classList.toggle('sel', id === TREE.sel));
+  document.querySelectorAll('.vmap i.nsel, .vatk i.nsel').forEach(i => i.classList.remove('nsel'));
+  if (TREE.node) document.querySelectorAll('[data-nid="' + CSS.escape(TREE.node) + '"]').forEach(i => i.classList.add('nsel'));
+}
+
+function overview(full) {
+  if (full === undefined) full = TREE.done;
+  const s = TREE.snap; if (!s) return; const grid = s.nodes.filter(n => !isAttack(n.id)).length;
+  const live = full ? null : TREE.live;   // mid-replay: show the champion as of now, not the ending
+  const cid = full ? s.champion : live && live.version, ce = full ? (cid && E(cid)) : live;
+  const big = el('div', 'ibig'); big.id = 'tbig'; big.append(ce ? String(ce.passes) : '–'); big.appendChild(el('span', '', ' / ' + (ce ? ce.total : '–')));
+  const sub = el('div', 'sub', cid ? 'nodes pass with ' + (full ? 'champion ' : 'current champion ') + cid + ': ' + V(cid).title : 'replaying: no champion yet'); sub.id = 'tsub';
+  const champ = el('div'); champ.append(big, sub);
+  const facts = kv([['nodes', grid + ' settings + ' + (s.nodes.length - grid) + ' attack nodes'], ['versions', String(s.versions.length) + ' grown by the swarm'],
+    ['backend', (s.nodes[0] && s.nodes[0].backend) || 'local'], ['memory', s.memory ? s.memory.fixes + ' fixes, ' + s.memory.attacks + ' attacks kept for the next run' : null], ['source', TREE.src]]);
+  const how = el('p', 'ip'); how.append('Each ', el('b', '', 'node'), ' is one setting of the world in its own sandbox. Each ', el('b', '', 'version'), ' of the tool is scored on every node. Failing versions get fixed; versions that pass get attacked. Click a card or a square.');
+  const feed = el('div', 'feed'); feed.id = 'tfeed';
+  side(champ, how, sec('Run', facts), sec('Swarm log', feed));
+  if (full) TREE.log.filter(e => ['version', 'eval', 'attack', 'champion', 'approved', 'done'].includes(e.event)).forEach(feedLine);
+}
+
+function inspectVersion(vid) {
+  TREE.sel = vid; TREE.node = null; mark();
+  const v = V(vid), e = E(vid), p = v.parent && E(v.parent);
+  const lin = el('div', 'lin'); lineage(vid).forEach((id, i) => { if (i) lin.append('→'); const b = el('button', '', id); b.onclick = () => inspectVersion(id); lin.append(b); });
+  const big = el('div', 'ibig'); big.append(e ? String(e.passes) : '–'); big.appendChild(el('span', '', ' / ' + (e ? e.total : '–')));
+  const kids = [backBtn(), el('div', 'ititle', vid + ' · ' + v.title), lin, big];
+  kids.push(kv([['track', v.track], ['generation', String(v.generation)], ['grown by', (v.agent || '') + (v.source ? ' (' + v.source + ')' : '')],
+    ['utility', e ? (e.utility ? 'same output as v0 on every clean node' : 'changed the tool\'s output: cannot be champion') : null], ['champion', TREE.snap.champion === vid ? 'yes' : null]]));
+  if (v.rationale) kids.push(sec('Why', el('p', 'ip', v.rationale)));
+  if (e && p) {
+    const gained = [], lost = [];
+    Object.entries(e.results).forEach(([nid, r]) => { const q = p.results[nid]; if (!q) return; if (q.verdict === 'BLOCK' && r.verdict === 'PASS') gained.push(nid); if (q.verdict === 'PASS' && r.verdict === 'BLOCK') lost.push(nid); });
+    const mk = (ids, cls) => { const d = el('div', 'nlinks'); if (!ids.length) d.append(el('span', 'ip', 'none')); ids.forEach(id => { const b = el('button', 'nlink ' + cls, id); b.onclick = () => inspectNode(id, vid); d.append(b); }); return d; };
+    kids.push(sec('Fixed vs ' + v.parent, mk(gained, 'p')), sec('Broke vs ' + v.parent, mk(lost, 'f')));
+  }
+  if (e) { const fails = Object.entries(e.results).filter(([, r]) => r.verdict === 'BLOCK').map(([id]) => id);
+    const d = el('div', 'nlinks'); if (!fails.length) d.append(el('span', 'ip', 'none: passes every node')); fails.forEach(id => { const b = el('button', 'nlink f', id); b.onclick = () => inspectNode(id, vid); d.append(b); }); kids.push(sec('Still fails', d)); }
+  if (v.patch) { const pre = el('pre', 'diff'); v.patch.split('\n').forEach(l => { const s = el('span', l.startsWith('+') && !l.startsWith('+++') ? 'a' : l.startsWith('-') && !l.startsWith('---') ? 'd' : l.startsWith('@@') ? 'm' : '', l + '\n'); pre.appendChild(s); }); kids.push(sec('Patch vs v0', pre)); }
+  if (v.policy) kids.push(sec('Sandbox policy', kv(Object.entries(v.policy).map(([k, x]) => [k, Array.isArray(x) ? x.join(', ') || 'none' : String(x)]))));
+  side(kids);
+}
+
+function inspectNode(nid, vid) {
+  TREE.node = nid; TREE.sel = vid || TREE.sel || TREE.snap.champion; mark();
+  const n = N(nid); if (!n) return; const cur = TREE.sel;
+  const chips = el('div', 'knobs'); KN.forEach(k => { const c = el('i', n.world[k] ? 'onk' : '', (SHORT[k] || k) + (n.world[k] ? ' on' : ' off')); c.title = k; chips.appendChild(c); });
+  const kids = [backBtn(), el('div', 'ititle', nid), sec('Setting', chips)];
+  kids.push(kv([['origin', n.origin === 'attack' ? 'added by ' + (n.added_by || 'attacker') + ' to beat ' + n.against : 'grid (one of 64 settings)'],
+    ['sandbox', n.sandbox_id ? String(n.sandbox_id).slice(0, 8) + '… (' + n.backend + ')' : n.backend + ' sandbox'], ['fork', n.fork_ms != null ? n.fork_ms + ' ms' : null]]));
+  if (n.variant) { kids.push(sec('Attack: ' + n.variant.title, el('pre', 'inj', n.variant.injection))); }
+  const row = el('div', 'xrow');
+  TREE.snap.versions.forEach(v => { const r = E(v.id) && E(v.id).results[nid]; const b = el('button', 'xcell ' + (r ? (r.verdict === 'BLOCK' ? 'f' : 'p') : '') + (v.id === cur ? ' cur' : ''));
+    b.append(el('b', '', v.id), el('span', '', r ? r.verdict + ' ' + r.score + '/5' : 'not scored')); b.onclick = () => inspectNode(nid, v.id); row.appendChild(b); });
+  kids.push(sec('This node under every version', row));
+  const r = cur && E(cur) && E(cur).results[nid];
+  if (r) {
+    const bar = el('div', 'bar'); for (let i = 0; i < 5; i++) { const s = el('i'); if (i < r.score) s.style.background = SCORE_COLOR[r.score]; bar.appendChild(s); }
+    const tr = el('div', 'trace'); (r.events || []).forEach(ev => { const d = el('div', 'k-' + ev.kind); d.append(el('b', '', ev.kind + ' '), ev.target || ''); if (ev.leaked && ev.leaked.length) d.append(el('span', 'leak', '  leaked: ' + ev.leaked.join(', '))); tr.appendChild(d); });
+    if (!tr.children.length) tr.appendChild(el('div', '', 'no actions recorded'));
+    kids.push(sec('Under ' + cur + ': ' + r.verdict + ' · score ' + r.score + '/5', bar, el('p', 'ip', r.reason)), sec('What the tool did', tr));
+    if (r.output) kids.push(sec('Tool output', el('p', 'ip', r.output)));
+  }
+  side(kids);
+}
+
+(function addTreeKey() {   // a "Tree" button next to Shri's scenario keys
+  const tryAdd = () => { const keys = $('keys'); if (!keys) return; const have = keys.querySelector('[data-k="t"]'); if (have) { if (keys.lastElementChild !== have) keys.appendChild(have); return; }
+    const b = el('button', 'key', 'Fix it: tree'); b.dataset.k = 't'; b.title = 'Phase 2 version tree (T)'; b.setAttribute('aria-pressed', 'false'); b.onclick = loadTree; keys.appendChild(b); };
+  const mo = new MutationObserver(tryAdd); mo.observe($('keys'), { childList: true }); tryAdd();
+  addEventListener('keydown', e => { if (document.body.classList.contains('mode-tree') && e.key === 'Escape') { TREE.sel = null; TREE.node = null; mark(); overview(); } });
+})();
 </script>
 </body>
 </html>

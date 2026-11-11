@@ -185,6 +185,9 @@ def cmd_report(a):
     snap = board.snapshot()
     OUT.mkdir(exist_ok=True)
     (OUT / "board.json").write_text(json.dumps(snap, indent=2))
+    # The viewer's tree view replays this log to grow the tree in order.
+    (OUT / "board.log.jsonl").write_text(
+        "".join(json.dumps(e) + "\n" for e in board.read_log()))
     versions = {v["id"]: v for v in snap["versions"]}
     evals = {e["version"]: e for e in snap["evals"]}
     count = len(snap["nodes"])

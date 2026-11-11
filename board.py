@@ -4,6 +4,7 @@ Every peer reads and writes the board; nothing else connects them. LocalBoard
 is a directory. ArchilBoard (board_archil.py, one Archil disk) has the same
 methods; both build snapshot() with build_snapshot() below.
 """
+import fcntl
 import json
 import os
 import shutil
@@ -66,11 +67,17 @@ class LocalBoard:
             return False
 
     def log(self, agent, event, **data):
-        with self._lock:
-            seq = len(self.read_log())
-            line = {"seq": seq, "ts": time.time(), "agent": agent, "event": event, **data}
-            with open(self._p(_LOG), "a") as f:
+        # Peers run as separate processes, so the thread lock alone can't stop two
+        # of them reading the same length and reusing a seq. flock the log itself.
+        with self._lock, open(self._p(_LOG), "a") as f:
+            fcntl.flock(f, fcntl.LOCK_EX)
+            try:
+                seq = len(self.read_log())
+                line = {"seq": seq, "ts": time.time(), "agent": agent, "event": event, **data}
                 f.write(json.dumps(line) + "\n")
+                f.flush()
+            finally:
+                fcntl.flock(f, fcntl.LOCK_UN)
 
     def read_log(self, since=0):
         try:
