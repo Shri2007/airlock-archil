@@ -102,6 +102,26 @@ Path('results.json').write_text(json.dumps({'repo': {'name': repo, 'source': 'fi
         self.assertEqual(self.scans.snapshot()['state'], 'failed')
         self.assertEqual((self.root / 'results.json').read_text(), original)
 
+    def test_archil_mode_sets_real_backend_and_reports_fallback(self):
+        for actual_mode in ('archil', 'local'):
+            with self.subTest(actual_mode=actual_mode):
+                script = """import json, os
+from pathlib import Path
+assert os.environ['USE_ARCHIL'] == '1'
+print('AIRLOCK  |  backend: archil sandbox', flush=True)
+Path('results.json').write_text(json.dumps(RESULT))
+""".replace('RESULT', repr({'repo': {'name': 'pallets/flask', 'source': 'fixture'},
+                          'mode': actual_mode, 'note': 'archil failed' if actual_mode == 'local' else None}))
+                (self.root / 'run_airlock.py').write_text(script)
+                self.scans.start('pallets/flask', 'archil', True)
+                deadline = time.monotonic() + 5
+                while self.scans.snapshot()['state'] == 'running' and time.monotonic() < deadline:
+                    time.sleep(.02)
+                final = self.scans.snapshot()
+                self.assertEqual(final['state'], 'complete' if actual_mode == 'archil' else 'fallback', final)
+                self.assertEqual(final['result_mode'], actual_mode)
+                self.assertIn('elapsed_seconds', final)
+
     def test_repo_name_accepts_urls_and_rejects_command_injection(self):
         for value in ('pallets/flask', ' https://github.com/Pallets/Flask.git '):
             self.assertEqual(repo_name(value), 'pallets/flask')

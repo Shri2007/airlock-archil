@@ -281,7 +281,7 @@
     <form class="repo-form" id="repoForm">
       <label for="repoInput">Public GitHub repo</label>
       <input id="repoInput" type="text" name="repo" value="pallets/flask" placeholder="owner/repo or GitHub URL" autocomplete="off" spellcheck="false" required maxlength="250">
-      <select id="scanMode" aria-label="Scan backend"><option value="local">Local demo</option><option value="archil">Archil microVMs</option></select>
+      <select id="scanMode" aria-label="Scan backend"><option value="archil">Archil microVMs</option><option value="local">Local demo</option></select>
       <label class="offline"><input id="repoOffline" type="checkbox">Offline fixture</label>
       <button class="key" id="scanButton" type="submit">Scan repo</button>
     </form>
@@ -608,12 +608,16 @@ async function pollScan() {
     if (job.state === 'running') {
       activeScan = job.id;
       scanBusy(true);
-      scanStatus(job.repo + ' · ' + (job.mode === 'archil' ? 'Archil microVMs' : 'local demo') + ' · ' + job.progress, 'running');
+      scanStatus(job.repo + ' · ' + (job.mode === 'archil' ? 'Archil microVMs' : 'local demo') + ' · ' + (job.elapsed_seconds || 0) + 's · ' + job.progress, 'running');
       scanTimer = setTimeout(pollScan, 800);
-    } else if (job.state === 'complete') {
+    } else if (job.state === 'complete' || job.state === 'fallback') {
       activeScan = null;
       scanBusy(false);
-      scanStatus(job.repo + ' · scan complete on ' + (job.result_mode === 'archil' ? 'Archil microVMs' : 'local folders') + (job.note ? ' · ' + job.note : '') + '. Results updated below.', 'complete');
+      if (job.state === 'fallback') {
+        scanStatus(job.repo + ' · Archil failed. Showing LOCAL fallback results. ' + (job.note || ''), 'failed');
+      } else {
+        scanStatus(job.repo + ' · scan complete on ' + (job.result_mode === 'archil' ? 'Archil microVMs' : 'local folders') + '. Results updated below.', 'complete');
+      }
       if (loadedScan !== job.id) {
         loadedScan = job.id;
         if (guide.open) guide.close();

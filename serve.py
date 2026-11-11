@@ -14,6 +14,7 @@ import re
 import subprocess
 import sys
 import threading
+import time
 from urllib.parse import unquote, urlsplit
 import uuid
 
@@ -41,15 +42,22 @@ class ScanManager:
         self.root = Path(root)
         self.lock = threading.Lock()
         self.job = None
+        self.started = None
 
     def snapshot(self):
         with self.lock:
-            return dict(self.job) if self.job else {"state": "idle"}
+            if not self.job:
+                return {"state": "idle"}
+            job = dict(self.job)
+            if job["state"] == "running" and self.started is not None:
+                job["elapsed_seconds"] = int(time.monotonic() - self.started)
+            return job
 
     def start(self, repo, mode, offline):
         with self.lock:
             if self.job and self.job["state"] == "running":
                 raise RuntimeError("A scan is already running. Wait for it to finish.")
+            self.started = time.monotonic()
             self.job = {"id": uuid.uuid4().hex, "repo": repo, "mode": mode,
                         "state": "running", "progress": "Preparing repository…", "log": []}
             job = dict(self.job)
@@ -69,7 +77,12 @@ class ScanManager:
                 for line in process.stdout:
                     # Show scanner progress, without forwarding SDK error bodies.
                     text = line.strip()
-                    if text.startswith(("REPO:", "ROUND ", "Found the betrayal", "No betrayal found", "EVIDENCE:", "Finishing the SAME search")):
+                    if text.startswith("AIRLOCK  |"):
+                        progress = ("Provisioning the base Archil microVM and forking the first worlds…"
+                                    if "archil sandbox" in text else "Running the local search…")
+                        with self.lock:
+                            self.job["progress"] = progress
+                    if text.startswith(("REPO:", "ROUND ", "Found the betrayal", "No betrayal found", "EVIDENCE:", "Finishing the SAME search", "CRIME SCENE KEPT:")):
                         with self.lock:
                             self.job["progress"] = text
                             self.job["log"] = (self.job["log"] + [text])[-20:]
@@ -79,7 +92,11 @@ class ScanManager:
             if result.get("repo", {}).get("name") != repo:
                 raise RuntimeError("The scanner did not produce results for this repository.")
             with self.lock:
-                self.job.update(state="complete", progress="Scan complete. Loading results…",
+                fallback = mode == "archil" and result.get("mode") != "archil"
+                self.job.update(state="fallback" if fallback else "complete",
+                                elapsed_seconds=int(time.monotonic() - self.started),
+                                progress="Archil failed. Showing local fallback results." if fallback
+                                else "Scan complete. Loading results…",
                                 result_mode=result.get("mode"), repo_info=result["repo"],
                                 note=result.get("note"))
         except Exception as error:
