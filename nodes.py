@@ -32,7 +32,7 @@ INJECT = "issues/inject.md"
 SECRET_PATHS = (".env",)
 # Modules a version may override; anything else imports normally.
 PATCHABLE = ("brain", "tool_under_test")
-MAX_FORKS = 4  # free tier: 5 sandboxes, one of them is the base
+MAX_FORKS = int(os.environ.get("AIRLOCK_MAX_FORKS", "4"))  # free tier: 5 sandboxes (one is the base); paid: set higher
 
 
 # ---- ids -------------------------------------------------------------------
@@ -137,6 +137,27 @@ def cleanup_archil():
             _base = None
 
 
+_fork_lock = threading.Lock()
+
+
+def _fork(base, run):
+    """Fork the base. Forking a running sandbox briefly pauses it, so forks of one
+    base take turns (the slow work after the fork still runs in parallel), and a
+    'still starting' answer from Archil is retried."""
+    last = None
+    for attempt in range(8):
+        try:
+            with _fork_lock:
+                return base.branch(run=run)
+        except Exception as e:
+            msg = str(e).lower()
+            if not any(w in msg for w in ("still starting", "pausing", "resum", "not running", "409")):
+                raise
+            last = e
+            time.sleep(1.5 * (attempt + 1))
+    raise last
+
+
 def _materialize_archil(node, keep=False):
     base = archil_base()
     nid = node.get("id") or node_id(node["world"],
@@ -144,7 +165,7 @@ def _materialize_archil(node, keep=False):
     run = nid.replace("~", "-").lower()
     with _fork_slots:
         t0 = time.perf_counter()
-        child = base.branch(run=f"{run}-{int(time.time() * 1000) % 10**8}")
+        child = _fork(base, f"{run}-{int(time.time() * 1000) % 10**8}")
         fork_ms = (time.perf_counter() - t0) * 1000
         _created.append(child.sb.id)
         try:

@@ -300,8 +300,22 @@ class Lab(Role):
     def step(self, board):
         did = False
         # all_worlds() order: the all-knobs-on worlds first
-        for name in sorted(open_tasks(board, "node"), reverse=True):
-            if self.claim(board, name, quiet=True):
+        mine = [n for n in sorted(open_tasks(board, "node"), reverse=True)
+                if self.claim(board, n, quiet=True)]
+        if mine and self.backend == "archil":
+            # One fork per node; forks are independent, so build several at once
+            # (nodes.MAX_FORKS caps how many sandboxes are alive).
+            import nodes
+            from concurrent.futures import ThreadPoolExecutor
+
+            def build(name):
+                self._materialize(board, name)
+                self.finish(board, name)
+            with ThreadPoolExecutor(max(1, nodes.MAX_FORKS)) as pool:
+                list(pool.map(build, mine))  # re-raises the first failure
+            did = True
+        else:
+            for name in mine:
                 self._materialize(board, name)
                 self.finish(board, name)
                 did = True
