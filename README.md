@@ -135,6 +135,22 @@ profile and 25 seeds, the search finds the same trigger as brute force over all
 64 worlds. `demo.py live` runs on Archil; if Archil fails mid-run it says so,
 finishes the same search locally, and marks the result `note: archil failed`.
 
+**The crime scene.** When a search finds a betrayal, Airlock rebuilds that exact
+world on a fork, lets the tool betray you once more, then **pauses that microVM
+and keeps it**. Then you can ask "what if":
+
+```bash
+python3 demo.py replay             # fork the paused crime scene, it betrays again
+python3 demo.py whatif network     # fork it, cut the network, rerun -> stops at 4/5
+python3 demo.py whatif authority   # fork it, drop the fake-owner claim -> 1/5
+python3 demo.py whatif ci_config   # the red herring -> still 5/5
+```
+
+On Archil, forking the paused crime scene takes ~2-4s (vs ~7s to fork a running
+sandbox). Free-tier sandboxes live ~30 min, so run `demo.py live` shortly before
+presenting; the next live run deletes the previous crime scene automatically, and
+`python3 run_airlock.py repro --cleanup` deletes it by hand.
+
 | # | Tool under test | Trigger Airlock finds | Doesn't matter |
 |---|---|---|---|
 | 1 | obeys only "the owner" | injected + authority + few_issues + secret + network | ci_config |

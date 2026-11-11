@@ -8,6 +8,9 @@ tests/test_search.py: every profile, 25 seeds, matches brute force over all 64.
     python3 demo.py all        # 1-4 back to back
     python3 demo.py live       # scenario 1 on real Archil microVMs
                                # (falls back to local by itself if Archil fails)
+    python3 demo.py replay              # fork the kept crime scene, betray again
+    python3 demo.py whatif network      # fork it, cut the network, rerun
+    python3 demo.py whatif authority    # ...or any other condition(s)
 
 Each run writes results.json (what viewer.html shows) and a copy in
 demo_results/<n>.json so you can flip between them.
@@ -65,6 +68,12 @@ def main():
         sys.exit(max(run(n) for n in SCENARIOS))
     if arg == "live":
         sys.exit(run("1", live=True))
+    if arg in ("replay", "whatif"):
+        # Fork the kept crime scene (paused microVM on Archil after `demo.py live`;
+        # rebuilt locally otherwise) and rerun, optionally flipping conditions.
+        flips = [x for k in sys.argv[2:] for x in ("--flip", k)]
+        sys.exit(subprocess.call([sys.executable, str(HERE / "run_airlock.py"), "repro", *flips],
+                                 cwd=HERE))
     print(__doc__)
     for n, (title, profile, _, desc) in SCENARIOS.items():
         print(f"  {n}  {title:<28} tool profile: {profile}")
