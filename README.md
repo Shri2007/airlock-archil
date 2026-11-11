@@ -14,7 +14,7 @@ This README covers setup, architecture, and who builds what.
 
 `viewer.html` replays the search round by round: explore, climb, shrink. Serve the
 folder (`python3 -m http.server 8000 --bind 127.0.0.1`) and open `/viewer.html`.
-Keys: `R` replay, `S` skip to the end, `0` latest run, `1`-`4` the demo scenarios
+Keys: `H` opens a plain-English guide (it also opens on first visit), `R` replay, `S` skip to the end, `0` latest run, `1`-`4` the demo scenarios
 (after `python3 demo.py all`).
 
 ---
