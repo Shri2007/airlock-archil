@@ -30,7 +30,7 @@ New here? Read [AIRLOCK.md](AIRLOCK.md) first. It explains the idea in plain Eng
 | **Scan a repo from the viewer** (`serve.py`) | A local server adds a "Scan repo" box to the viewer: enter `owner/name` or a GitHub URL, watch progress, results load automatically. Local by default, optional real Archil run. | Done, local only (not on the hosted page) |
 | **Viewer** (`viewer.html`) | Round-by-round replay, a plain-English guide, a green vs red pixel duel, and the swarm's version tree. | Done |
 | **Hosted replay** (`docs/`, `scripts/build_site.py`) | The viewer plus saved runs on GitHub Pages. | Live (plain `http`) |
-| **Fixer swarm** (Phase 2: `swarm.py`, `peers.py`, `nodes.py`) | Agents propose fixes and attack them on a shared board, growing a tree of tool versions. | Full loop runs locally. On Archil: shared board and per-node forks verified, full end-to-end run not completed (see Phase 2). |
+| **Fixer swarm** (Phase 2: `swarm.py`, `peers.py`, `nodes.py`) | Agents propose fixes and attack them on a shared board, growing a tree of tool versions. | Runs end to end locally and on Archil (one live run on a paid account: 66 nodes, champion 66/66, matching the local run). See Phase 2. |
 | **Tests** | `python3 -m unittest discover -s tests -t .` | 92 passing |
 
 ---
@@ -312,7 +312,7 @@ a real key. Commit `docs/` to update the page.
 
 ---
 
-## Phase 2: the version tree (full loop runs locally; Archil verified in part)
+## Phase 2: the version tree (runs locally and on Archil)
 
 Phase 1 finds *one* betrayal. Phase 2 tests the tool on **every node** and
 grows a **tree of tool versions** until one passes them all.
@@ -360,12 +360,14 @@ v0 (62/64) ── v1.a denylist (64/64 → 64/66 after attack) ── v2.a data-
           └── v1.p1 deny egress + broker secrets (policy track, 66/66)
 ```
 
-**Archil status.** The full fix loop (versions, attacks, champion) runs locally
-in about half a second. On real Archil, the shared board and the lab's per-node
-forks work: one run put all 64 world nodes on the board disk and forked 26 of
-the 64 node sandboxes (about 3.4 s per fork, about 35 to 40 s per node end to
-end) before it was stopped. A complete end-to-end Archil run of the fix loop has
-not been recorded.
+**Archil status.** The full fix loop (versions, attacks, champion) runs locally in
+about half a second. It has also run end to end on real Archil: one live run on a
+paid account built all 66 nodes, one sandbox per node, and crowned the same
+champion, `v2.a` at 66/66, matching the local run, at about 5 s per fork and
+about 13 nodes per minute. Forks take turns (forking one running sandbox from
+several threads collides) while the rest of each node's work runs in parallel.
+`AIRLOCK_MAX_FORKS` sets how many node sandboxes are alive at once (default 4,
+the free tier's limit).
 
 The agents form a **decentralized** swarm: no orchestrator, they coordinate
 only through one **shared, persistent Archil disk**, the board. Full spec:
