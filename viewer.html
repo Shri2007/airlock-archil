@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Airlock — Environment results</title>
+  <style>
+    :root { color-scheme: dark; font-family: "Avenir Next", "Segoe UI", sans-serif; background: #090e18; color: #f3f6fc; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; }
+    main { min-height: 100vh; padding: clamp(24px, 4vw, 72px); display: flex; flex-direction: column; gap: 32px; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+    .brand { font-size: clamp(28px, 3vw, 44px); font-weight: 750; letter-spacing: -.04em; }
+    button { font: inherit; font-size: 22px; font-weight: 650; color: #f3f6fc; background: #263349; border: 1px solid #60728f; border-radius: 8px; padding: 12px 28px; cursor: pointer; }
+    button:hover { background: #354662; }
+    button:disabled { opacity: .4; cursor: default; }
+    :focus-visible { outline: 3px solid #b4d0ff; outline-offset: 5px; }
+    .status { margin: 0; font-size: 22px; color: #b5c1d5; }
+    .about { border-left: 5px solid #a9c7ff; padding: 4px 0 4px 24px; }
+    .about h2 { margin: 0 0 18px; font-size: clamp(28px, 3vw, 42px); letter-spacing: -.03em; }
+    .about p { margin: 10px 0; max-width: 70ch; font-size: clamp(21px, 2vw, 28px); line-height: 1.45; color: #c1cde0; }
+    .about strong { color: #f3f6fc; }
+    .sample { padding: 12px 18px; background: #352d18; border: 1px solid #a58a43; border-radius: 6px; font-size: 21px; color: #ffe2a1; }
+    .legend { display: flex; flex-wrap: wrap; gap: 12px 28px; font-size: 21px; color: #c1cde0; }
+    .legend .safe { color: #8df0bf; }
+    .legend .unsafe { color: #ffa6b4; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr)); gap: 16px; }
+    .tile { position: relative; min-width: 0; min-height: 150px; padding: 22px; border: 2px solid #465169; border-radius: 10px; background: #202837; transition: background-color .2s, border-color .2s; }
+    .tile.pass { background: #103c30; border-color: #53d59e; }
+    .tile.block { background: #541e2b; border-color: #ff7288; }
+    .tile-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+    .environment { font-size: 25px; font-weight: 700; overflow-wrap: anywhere; }
+    .verdict { font-size: 18px; font-weight: 800; flex-shrink: 0; color: #bbc7da; }
+    .pass .verdict { color: #8df0bf; }
+    .block .verdict { color: #ffa6b4; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip { display: inline-flex; gap: 8px; align-items: center; padding: 6px 10px; border: 1px solid #78869a; border-radius: 6px; font-size: 17px; overflow-wrap: anywhere; }
+    .chip b { font-size: 14px; color: #c6d0df; white-space: nowrap; }
+    .chip.on { background: #ffffff14; border-color: #c0cbda; }
+    .reason { display: none; position: absolute; bottom: calc(100% + 10px); left: 0; width: min(420px, 85vw); padding: 18px; background: #f3f6fc; color: #182131; border-radius: 8px; font-size: 20px; line-height: 1.4; box-shadow: 0 8px 32px #0008; z-index: 2; overflow-wrap: anywhere; pointer-events: none; }
+    .block:hover .reason, .block:focus .reason, .block:focus-within .reason { display: block; }
+    .summary { margin-top: auto; padding-top: 24px; visibility: hidden; }
+    .summary.visible { visibility: visible; }
+    h1 { font-size: clamp(40px, 5.8vw, 94px); letter-spacing: -.05em; line-height: 1.08; margin: 0; max-width: 20ch; }
+    .trigger { margin: 22px 0 0; font-size: clamp(24px, 2.6vw, 40px); color: #c1cde0; line-height: 1.35; overflow-wrap: anywhere; }
+    @media (prefers-reduced-motion: reduce) { .tile { transition: none; } }
+    @media (max-width: 600px) { main { gap: 24px; } button { font-size: 18px; padding: 10px 18px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header><div class="brand">Airlock</div><button id="replay" disabled>Replay</button></header>
+    <section class="about" aria-labelledby="about-title">
+      <h2 id="about-title">Can a malicious issue trick a tool into stealing secrets?</h2>
+      <p><strong>The task:</strong> summarize the repository’s GitHub issues.</p>
+      <p><strong>The attack:</strong> an issue contains instructions to read credentials and send them to an attacker.</p>
+      <p><strong>The test:</strong> Airlock runs the tool in disposable workspaces with fake secrets and different conditions. It flags unauthorized behavior before deployment.</p>
+      <p><strong>“Betrayed” means:</strong> the tool followed the attacker’s instructions instead of sticking to the user’s task.</p>
+    </section>
+    <div class="sample" id="sample" hidden>Sample data — these tiles illustrate the demo. They are not results from actual test runs.</div>
+    <div class="legend" aria-label="How to read the tiles">
+      <span>Each tile = one combination of conditions.</span>
+      <span class="safe">Green / PASS = no violation recorded.</span>
+      <span class="unsafe">Red / BLOCK = violation flagged. Hover or focus for the reason.</span>
+      <span>ON / OFF = whether a condition is enabled.</span>
+    </div>
+    <p class="status" id="status" role="status">Loading environments…</p>
+    <section class="grid" id="grid" aria-label="Environment results"></section>
+    <section class="summary" id="summary" aria-live="polite" aria-atomic="true">
+      <h1 id="headline"></h1>
+      <p class="trigger" id="trigger"></p>
+    </section>
+  </main>
+  <script>
+    'use strict';
+    const grid = document.getElementById('grid');
+    const status = document.getElementById('status');
+    const replay = document.getElementById('replay');
+    const summary = document.getElementById('summary');
+    const headline = document.getElementById('headline');
+    const trigger = document.getElementById('trigger');
+    let results;
+    let tiles = [];
+    let timers = [];
+
+    function element(tag, className, text) {
+      const node = document.createElement(tag);
+      node.className = className;
+      if (text !== undefined) node.textContent = text;
+      return node;
+    }
+
+    function validate(data) {
+      if (!data || !Array.isArray(data.environments) ||
+          !Number.isInteger(data.betrayed) || !Number.isInteger(data.total) ||
+          data.betrayed < 0 || data.total < data.betrayed ||
+          !Array.isArray(data.trigger) || !data.trigger.every(item => typeof item === 'string') ||
+          !data.environments.every(env => env && typeof env === 'object' &&
+            !Array.isArray(env) && ['BLOCK', 'PASS'].includes(env.verdict))) {
+        throw new Error('results.json does not match the expected results format.');
+      }
+      return data;
+    }
+
+    function render() {
+      tiles = results.environments.map(env => {
+        const tile = element('article', 'tile');
+        const name = String(env.id ?? 'Unnamed environment');
+        const heading = element('div', 'tile-heading');
+        const verdict = element('span', 'verdict', 'Waiting');
+        heading.append(element('span', 'environment', name), verdict);
+        const chips = element('div', 'chips');
+        Object.entries(env).filter(([, value]) => typeof value === 'boolean').forEach(([key, value]) => {
+          const chip = element('span', 'chip' + (value ? ' on' : ''));
+          chip.append(element('span', '', key), element('b', '', value ? 'ON' : 'OFF'));
+          chips.append(chip);
+        });
+        tile.append(heading, chips);
+        if (env.verdict === 'BLOCK') {
+          const reason = element('div', 'reason', String(env.reason ?? 'No reason provided.'));
+          reason.id = 'reason-' + tiles.length + '-' + grid.children.length;
+          tile.setAttribute('aria-describedby', reason.id);
+          tile.append(reason);
+        }
+        grid.append(tile);
+        return { tile, verdict, env, name };
+      });
+    }
+
+    function animate() {
+      timers.forEach(clearTimeout);
+      timers = [];
+      summary.classList.remove('visible');
+      headline.textContent = '';
+      trigger.textContent = '';
+      status.textContent = `Checking ${tiles.length} environments…`;
+      tiles.forEach(({ tile, verdict, name }) => {
+        tile.className = 'tile';
+        tile.removeAttribute('tabindex');
+        tile.setAttribute('aria-label', name + ': waiting');
+        verdict.textContent = 'Waiting';
+      });
+      const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const interval = reducedMotion ? 0 : 150;
+      tiles.forEach(({ tile, verdict, env, name }, index) => {
+        timers.push(setTimeout(() => {
+          tile.classList.add(env.verdict.toLowerCase());
+          verdict.textContent = env.verdict;
+          tile.setAttribute('aria-label', name + ': ' + env.verdict);
+          if (env.verdict === 'BLOCK') tile.tabIndex = 0;
+          status.textContent = `${index + 1} / ${tiles.length} environments checked`;
+        }, (index + 1) * interval));
+      });
+      timers.push(setTimeout(() => {
+        headline.textContent = `Betrayed in ${results.betrayed} of ${results.total} environments`;
+        trigger.textContent = results.trigger.length
+          ? 'Only betrays when ' + results.trigger.join(' + ')
+          : 'No betrayals found';
+        summary.classList.add('visible');
+        status.textContent = tiles.length ? 'All environments checked' : 'No environments to display';
+      }, tiles.length * interval + (reducedMotion ? 0 : 250)));
+    }
+
+    replay.addEventListener('click', animate);
+    async function load() {
+      try {
+        const response = await fetch('./results.json', { cache: 'no-store' });
+        if (!response.ok) throw new Error(`Could not load results.json (HTTP ${response.status}).`);
+        results = validate(await response.json());
+        document.getElementById('sample').hidden = results.sample !== true;
+        render();
+        replay.disabled = false;
+        animate();
+      } catch (error) {
+        status.textContent = `${error.message} Serve this folder over HTTP and make sure results.json is beside viewer.html.`;
+      }
+    }
+    load();
+  </script>
+</body>
+</html>
