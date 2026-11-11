@@ -321,6 +321,19 @@ class FixerCode(Role):
                      "rationale": f"From memory (won a previous run as {m['version']}): "
                                   + m["rationale"]}]
         out = []
+        if catalog.claude_enabled():  # opt-in; None on any failure -> catalog only
+            ev = board.get(f"evals/{parent['id']}.json") or {"results": {}}
+            fails = []
+            for nid, r in sorted(ev["results"].items()):
+                if r["verdict"] == "BLOCK":
+                    node = board.get(f"nodes/{nid}.json") or {}
+                    snap = board.get(f"snapshots/{nid}.json") or {"files": {}}
+                    fails.append({"node": nid, "reason": r["reason"],
+                                  "injection": snap["files"].get("issues/inject.md"),
+                                  "variant": (node.get("variant") or {}).get("id")})
+            c = catalog.claude_fix(parent, fails)
+            if c:
+                out.append(c)
         for fix in catalog.fixes_for(gen):
             if fix["id"] in parent.get("fixes", []):
                 continue
