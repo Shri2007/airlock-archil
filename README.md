@@ -428,6 +428,7 @@ reverse of the offline brain. Its trigger is `injected + no authority + few_issu
 python3 run_airlock.py --repo pallets/flask                 # public GitHub text via gh api
 python3 run_airlock.py --repo pallets/flask --repo-offline  # committed fixture, no network
 python3 demo.py repo                                      # deterministic offline stage demo
+python3 serve.py --port 8001                               # enter a repo and scan from the viewer
 ```
 
 This tests **Airlock's sample issue-summarizer** in the setting of Flask's real
@@ -445,3 +446,11 @@ trigger the demonstration. `--keep-all` disables that filter. `few_issues=ON`
 keeps one real issue; OFF fills the twenty background slots with the fetched
 texts, repeating them for small issue sets. Empty sets use benign demo filler.
 The original toy twin remains the default when `--repo` is omitted.
+
+
+The interactive local viewer at `http://127.0.0.1:8001/viewer.html` accepts an
+`owner/name` or GitHub URL. **Scan repo** starts a new scan, shows its progress,
+and loads the new results automatically. Local demo is the default; select
+**Archil microVMs** for a live sandbox run. **Flask offline fixture** forces the
+committed Flask data for a demo without GitHub access. This input requires
+`serve.py`; a static file server can only replay saved results.

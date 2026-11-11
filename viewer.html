@@ -39,6 +39,23 @@
   .key[aria-pressed="true"] { border-color: var(--green); color: var(--green); }
   .key:focus-visible, .tile:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 
+  /* public-repo scan controls */
+  .repo-panel { border: 1px solid var(--line); background: var(--panel); padding: 12px 16px; }
+  .repo-form { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .repo-form label { font-size: 14px; color: var(--mute); }
+  .repo-form input[type="text"] { flex: 1; min-width: 200px; padding: 9px 12px; border: 1px solid var(--dim); background: var(--bg); color: var(--ink); font: 17px var(--mono); }
+  .repo-form select { padding: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: 14px var(--mono); }
+  .repo-form .offline { display: flex; gap: 6px; align-items: center; font-size: 12px; }
+  .repo-form button { padding: 10px 20px; background: var(--green-deep); border-color: var(--green); color: var(--green); font-weight: 700; }
+  .repo-form :focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
+  .repo-form :disabled { opacity: .55; cursor: wait; }
+  .scan-status { margin: 9px 0 0; color: var(--mute); font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+  .scan-status.running { color: var(--s2); }
+  .scan-status.failed { color: var(--red); }
+  .scan-status.complete { color: var(--green); }
+  .repo-context { color: var(--mute); font-size: 12px; margin: 6px 0 0; }
+  @media (max-width: 700px) { .repo-form input[type="text"] { min-width: 100%; order: -1; } }
+
   /* arena */
   .arena { display: grid; grid-template-columns: 190px minmax(0, 1fr) 190px; align-items: center; gap: 24px;
            border: 1px solid var(--line); background: var(--panel); padding: 14px 26px; position: relative; overflow: hidden; }
@@ -259,6 +276,18 @@
     <button class="key" id="replay" title="Replay (R)">Replay</button>
     <button class="key help" id="help" title="What am I looking at? (H)">How to read this</button>
   </header>
+
+  <section class="repo-panel" aria-label="Scan a public GitHub repository">
+    <form class="repo-form" id="repoForm">
+      <label for="repoInput">Public GitHub repo</label>
+      <input id="repoInput" type="text" name="repo" value="pallets/flask" placeholder="owner/repo or GitHub URL" autocomplete="off" spellcheck="false" required maxlength="250">
+      <select id="scanMode" aria-label="Scan backend"><option value="local">Local demo</option><option value="archil">Archil microVMs</option></select>
+      <label class="offline"><input id="repoOffline" type="checkbox">Flask offline fixture</label>
+      <button class="key" id="scanButton" type="submit">Scan repo</button>
+    </form>
+    <p class="scan-status" id="scanStatus" role="status" aria-live="polite">Enter a public repo to run a new scan. Results load automatically.</p>
+    <p class="repo-context" id="repoContext">Tests Airlock’s sample summarizer against the repo’s issue text, with our planted attack and fake secrets.</p>
+  </section>
 
   <section class="arena" id="arena" aria-label="Airlock versus the tool under test">
     <div class="fighter f-green" id="fg"><svg viewBox="0 0 12 9" aria-hidden="true"></svg><div class="name">AIRLOCK</div></div>
@@ -519,11 +548,12 @@ async function load(which) {
     const res = await fetch(url, { cache: 'no-store' });
     if (!res.ok) throw new Error('Could not load ' + url + ' (HTTP ' + res.status + ').');
     data = normalize(await res.json());
+    showRepoContext();
     build(); if ($('guide').open && !instant) return; await play();
   } catch (err) {
     data = null;
     const box = $('rounds'); box.textContent = '';
-    const s = el('div', 'state'); s.append(err.message, el('br'), 'Run ', el('code', '', 'python3 run_airlock.py'), ' then serve this folder: ', el('code', '', 'python3 -m http.server 8000 --bind 127.0.0.1'));
+    const s = el('div', 'state'); s.append(err.message, el('br'), 'Run ', el('code', '', 'python3 run_airlock.py'), ' then serve this folder: ', el('code', '', 'python3 serve.py'));
     box.appendChild(s); $('phase').textContent = 'NO RESULTS';
   }
 }
@@ -538,7 +568,7 @@ async function setupKeys() {
 }
 $('replay').onclick = () => { if (document.body.classList.contains('mode-tree')) { playTree(); return; }  instant = params.has('instant') || reduce; if (data) play(); };
 addEventListener('keydown', e => {
-  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.metaKey || e.ctrlKey || e.altKey || e.target.closest('input, textarea, select, [contenteditable]')) return;
   const k = e.key.toLowerCase();
   if (guide.open) { if (k === 'enter' || k === ' ') { e.preventDefault(); guide.close(); } return; }
   if (document.body.classList.contains('mode-tree') && (k === 'r' || k === 's')) { if (k === 's') TREE.instant = true; playTree(); return; }
@@ -549,6 +579,76 @@ addEventListener('keydown', e => {
   else if (k === 't' && window.loadTree) loadTree();
 });
 let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (document.body.classList.contains('mode-tree')) { if (window.TREE) layoutLinks(); return; } if (data) { const keep = instant; instant = true; play().then(() => { instant = keep; }); } }, 200); });
+/* ---- start a real scan from the viewer ---- */
+let scanTimer = null;
+let activeScan = null;
+let loadedScan = null;
+function showRepoContext() {
+  const repo = data && data.repo;
+  $('repoContext').textContent = repo
+    ? repo.name + ' · ' + repo.source + ' data · ' + repo.issues_used + ' issues used · ' + repo.issues_skipped + ' filtered. Testing Airlock’s sample summarizer with fake secrets.'
+    : 'Tests Airlock’s sample summarizer against the repo’s issue text, with our planted attack and fake secrets.';
+}
+function scanStatus(message, state) {
+  $('scanStatus').textContent = message;
+  $('scanStatus').className = 'scan-status ' + (state || '');
+}
+function scanBusy(busy) {
+  [...$('repoForm').elements].forEach(control => { control.disabled = busy; });
+  $('scanButton').textContent = busy ? 'Scanning…' : 'Scan repo';
+  $('repoForm').setAttribute('aria-busy', String(busy));
+}
+async function pollScan() {
+  clearTimeout(scanTimer);
+  try {
+    const response = await fetch('./api/scan', { cache: 'no-store' });
+    if (!response.ok) throw new Error('Start the interactive viewer with python3 serve.py, then open its local URL.');
+    const job = await response.json();
+    if (activeScan && job.id !== activeScan) throw new Error('This scan was replaced. Start a new scan to continue.');
+    if (job.state === 'running') {
+      activeScan = job.id;
+      scanBusy(true);
+      scanStatus(job.repo + ' · ' + (job.mode === 'archil' ? 'Archil microVMs' : 'local demo') + ' · ' + job.progress, 'running');
+      scanTimer = setTimeout(pollScan, 800);
+    } else if (job.state === 'complete') {
+      activeScan = null;
+      scanBusy(false);
+      scanStatus(job.repo + ' · scan complete on ' + (job.result_mode === 'archil' ? 'Archil microVMs' : 'local folders') + (job.note ? ' · ' + job.note : '') + '. Results updated below.', 'complete');
+      if (loadedScan !== job.id) {
+        loadedScan = job.id;
+        if (guide.open) guide.close();
+        await load('0');
+      }
+    } else if (job.state === 'failed') {
+      activeScan = null;
+      scanBusy(false);
+      scanStatus(job.progress, 'failed');
+    }
+  } catch (error) {
+    activeScan = null;
+    scanBusy(false);
+    scanStatus(error.message, 'failed');
+  }
+}
+$('repoForm').addEventListener('submit', async event => {
+  event.preventDefault();
+  clearTimeout(scanTimer);
+  scanBusy(true);
+  runToken++;
+  if (window.TREE) TREE.token++;
+  scanStatus('Starting scan…', 'running');
+  try {
+    const response = await fetch('./api/scan', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ repo: $('repoInput').value, mode: $('scanMode').value, offline: $('repoOffline').checked })
+    });
+    const job = await response.json().catch(() => { throw new Error('Start the interactive viewer with python3 serve.py.'); });
+    if (!response.ok) throw new Error(job.error || 'Could not start scan.');
+    activeScan = job.id;
+    await pollScan();
+  } catch (error) { scanBusy(false); scanStatus(error.message, 'failed'); }
+});
+
 /* ---- guide ---- */
 const guide = $('guide');
 STEPS.forEach((s, n) => {
@@ -566,6 +666,9 @@ if (params.has('guide')) firstVisit = true;
 if (params.has('instant')) firstVisit = params.has('guide');
 if (firstVisit) openGuide();  // the replay starts when the guide closes
 setupKeys().then(() => params.get('view') === 'tree' && window.loadTree ? loadTree() : load(params.get('run') || '0'));
+fetch('./api/scan', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(job => {
+  if (job && job.state === 'running') { activeScan = job.id; pollScan(); }
+}).catch(() => {});
 </script>
 <script>
 'use strict';
