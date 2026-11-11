@@ -1,8 +1,10 @@
 # Airlock
 
-**Clone a computer many ways, run an AI tool in every clone, and find the exact
-conditions where it turns against you.** Then keep the machine it leaked on, so
-you can fork it and ask "what if". Built for the Archil hackathon (Nov 10, 2026, SF).
+**Airlock finds the conditions that make an AI tool leak secrets, then tests
+ways to fix it.** It uses Archil microVM forks to create different test
+environments, preserves evidence on a shared persistent disk, and keeps failing
+machines paused for reproducible experiments. Built for the Archil hackathon
+(Nov 10, 2026, SF).
 
 New here? Read [AIRLOCK.md](AIRLOCK.md) first. It explains the idea in plain English.
 
@@ -16,6 +18,46 @@ New here? Read [AIRLOCK.md](AIRLOCK.md) first. It explains the idea in plain Eng
 
 ---
 
+## Try the two-minute demo
+
+```bash
+python3 serve.py --port 8001
+```
+
+Open [the prepared demo](http://127.0.0.1:8001/viewer.html?demo=1) and click
+**Play prepared run**. It replays a verified real Archil scan in about ten seconds.
+The original runtime and microVM fork count remain visible. Prepared recordings
+are included for `Shri2007/airlock-demo-api` and `Shri2007/airlock-demo-docs`.
+
+1. Watch the search identify the leak conditions after testing 15 of 64 worlds.
+2. Click a red tile to see the captured fake credentials and evidence filename.
+3. Open **Fix it: tree** to inspect a recorded repair run, candidate patches, and
+   their test results. The current champion passes 66 of 66 scenarios.
+
+For a fresh cloud experiment, select **Archil microVMs** and click **Scan repo**.
+The rehearsed scans took about a minute. The page shows progress and explicitly
+labels any local fallback. The hosted static page replays saved results; the
+local server supports launching scans.
+
+## Why Archil
+
+- **Forked** microVM workspaces let us compare different test conditions.
+- **Shared, persistent** storage collects audit trails and captured transfers
+  from the experiments. A separate canary search checks the judge's verdicts.
+- **Paused, forkable** failures let us return to the same environment and test
+  what happens when one condition changes.
+
+A **world** is one combination of ON/OFF test conditions. **Climb** changes one
+condition to get closer to a leak. **Shrink** turns conditions off to find which
+ones are necessary. The fix-it tree compares candidate code and policy changes.
+
+The stage demo uses Airlock's sample summarizer, deterministic vulnerability
+profiles, and predefined candidate fixes. GitHub issue text supplies the setting.
+All credentials are fake, and outbound transfers are simulated and recorded.
+Prepared scan playback and the repair tree are labeled recordings.
+
+---
+
 ## What's built
 
 | Piece | What it does | Status |
@@ -26,12 +68,12 @@ New here? Read [AIRLOCK.md](AIRLOCK.md) first. It explains the idea in plain Eng
 | **Crime scene** (`crime.py`) | Keeps the betraying microVM paused. Fork it (2 to 4 s on Archil) to replay the leak or ask "what if". | Live on Archil |
 | **Stage demo** (`demo.py`) | Four deterministic tool profiles, a real-repo scenario, a live Archil run, replay and what-if. | Works offline, same answer every time |
 | **Real model** | `AGENT_BRAIN=anthropic` runs Claude Haiku 5.5 as the tool's brain. | Same trigger on 3 runs |
-| **Real repo as the setting** (`repo_twin.py`) | `--repo owner/name` seeds the worlds with a public repo's real README and issues. | Live fetch tested on several repos; one live Archil run on Flask's text |
-| **Scan a repo from the viewer** (`serve.py`) | A local server adds a "Scan repo" box to the viewer: enter `owner/name` or a GitHub URL, watch progress, results load automatically. Local by default, optional real Archil run. | Done, local only (not on the hosted page) |
+| **Real repo as the setting** (`repo_twin.py`) | `--repo owner/name` seeds the worlds with a public repo's real README and issues. | Live fetch tested on several repos; live Archil runs on Flask and both demo repos |
+| **Scan a repo from the viewer** (`serve.py`) | A local server adds a "Scan repo" box to the viewer: enter `owner/name` or a GitHub URL, watch progress, results load automatically. Archil by default, with local and prepared-replay options. | Done, local only (not on the hosted page) |
 | **Viewer** (`viewer.html`) | Round-by-round replay, a plain-English guide, a green vs red pixel duel, and the swarm's version tree. | Done |
 | **Hosted replay** (`docs/`, `scripts/build_site.py`) | The viewer plus saved runs on GitHub Pages. | Live (plain `http`) |
 | **Fixer swarm** (Phase 2: `swarm.py`, `peers.py`, `nodes.py`) | Agents propose fixes and attack them on a shared board, growing a tree of tool versions. | Runs end to end locally and on Archil (one live run on a paid account: 66 nodes, champion 66/66, matching the local run). See Phase 2. |
-| **Tests** | `python3 -m unittest discover -s tests -t .` | 92 passing |
+| **Tests** | `python3 -m unittest discover -s tests -t .` | 95 passing |
 
 ---
 
@@ -479,7 +521,7 @@ fields is fine.
 | Entry points | `run_airlock.py` (the search), `demo.py` (stage scenarios), `swarm.py` (Phase 2), `serve.py` (local viewer server with the Scan repo box) |
 | Phase 2 | `board.py`, `board_archil.py`, `nodes.py`, `peers.py`, `catalog.py`, `archil_fake.py`, [CONTRACTS.md](CONTRACTS.md) |
 | Viewer and site | `viewer.html`, `docs/`, `scripts/build_site.py`, `scripts/smoke_archil.py` |
-| Tests and fixtures | `tests/`, `fixtures/` (recorded swarm run, Flask text) |
+| Tests and fixtures | `tests/`, `fixtures/` (recorded scans and swarm run, offline repo text) |
 
 ---
 
