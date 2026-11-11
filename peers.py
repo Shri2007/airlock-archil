@@ -198,7 +198,10 @@ class Lab(Role):
 
     def _snap(self, board, nid):
         if nid not in self._snaps:
-            self._snaps[nid] = board.get(f"snapshots/{nid}.json")
+            snap = board.get(f"snapshots/{nid}.json")
+            if snap is None:
+                return None  # not built yet: don't cache the miss
+            self._snaps[nid] = snap
         return self._snaps[nid]
 
     # -- evals --
@@ -210,10 +213,15 @@ class Lab(Role):
         prev = board.get(f"evals/{vid}.json")
         if version is None or (prev and prev["nodes_seen"] >= len(all_nodes)):
             return  # already fresh (duplicate re-eval request)
+        # The attacker may have added nodes since step() checked readiness:
+        # score nothing until every node has a snapshot, and let step() requeue.
+        snaps = {n["id"]: self._snap(board, n["id"]) for n in all_nodes}
+        if any(n.get("state") != "ready" or snaps[n["id"]] is None for n in all_nodes):
+            return "defer"
         v0 = board.get("versions/v0.json")
         results, utility = {}, True
         for node in all_nodes:
-            snap = self._snap(board, node["id"])
+            snap = snaps[node["id"]]
             r = nodes.evaluate(version, node, snap)
             results[node["id"]] = r
             if not node["world"]["injected"] and vid != "v0":
@@ -303,8 +311,10 @@ class Lab(Role):
         prio = lambda n: ((board.get(f"tasks/open/{n}.json") or {}).get("priority", 1), n)
         for name in sorted(names, key=prio):
             if self.claim(board, name):
-                self._score(board, name)  # posts follow-ups before finishing
-                self.finish(board, name)
+                if self._score(board, name) == "defer":  # new nodes appeared mid-step
+                    board.claim(f"tasks/claimed/{name}.{self.file}.json", f"tasks/open/{name}.json")
+                    break
+                self.finish(board, name)  # _score posts follow-ups before this
                 did = True
         if approved(board):
             did |= self._stale(board)

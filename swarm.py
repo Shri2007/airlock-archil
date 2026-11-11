@@ -120,7 +120,12 @@ def cmd_up(a):
           flush=True)
     t0 = time.time()
     if a.deterministic:
-        done = peers.run_scheduler(board, backend=a.backend, seed=a.seed)
+        try:
+            done = peers.run_scheduler(board, backend=a.backend, seed=a.seed)
+        finally:
+            if a.backend == "archil":  # the per-process base sandbox holds a free-tier slot
+                import nodes
+                nodes.cleanup_archil()
         tail(board, 0, quiet_nodes=True)
     else:
         done = run_processes(board, a)

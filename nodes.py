@@ -286,8 +286,8 @@ def evaluate(version, node, snapshot, locker=None):
     run = f"{version['id']}.{nid}"
     rec = Recorder(os.devnull, locker=locker)
     ws = MemWorkspace(files, rec, run, network)
-    tool = _tool_for(version)
     try:
+        tool = _tool_for(version)  # a version can fail while loading, too
         output = tool.run_tool(ws)
     except Exception as e:  # a broken fixer version fails utility, not the swarm
         output = f"ERROR {type(e).__name__}: {e}"
