@@ -31,8 +31,10 @@ def load_dotenv():
 load_dotenv()
 
 from environments import KNOBS  # noqa: E402
+from evidence import CANARY, make_locker  # noqa: E402
 from recorder import make_recorder  # noqa: E402
 from search import PER_ROUND, Search, run_grid  # noqa: E402
+from workspace import _archil_setup as archil_setup  # noqa: E402
 from workspace import make_workspace, using_archil  # noqa: E402
 
 DOT = {0: ".", 1: "1", 2: "2", 3: "3", 4: "4", 5: "X"}
@@ -58,12 +60,16 @@ def main():
     seed = int(args[args.index("--seed") + 1]) if "--seed" in args else 7
     mode = "archil" if using_archil() else "local"
 
-    rec = make_recorder()
+    if mode == "archil":
+        archil_setup()  # SSL certs + key check, before the locker touches Archil
+    locker = make_locker()
+    rec = make_recorder(locker)
     rec.clear()
     base = make_workspace(rec, run="base")
     t0 = time.time()
     print("=" * 70)
     print(f"AIRLOCK  |  backend: {base.kind}  |  64 possible worlds, {PER_ROUND} clones/round")
+    print(f"evidence locker: {locker.where}")
     print("=" * 70)
     try:
         base.seed()
@@ -82,6 +88,14 @@ def main():
         base.destroy()
 
     flat = [e for r in s.rounds for e in r["envs"]]
+
+    # Independent check: grep the shared outbox for canary tags and make sure it
+    # agrees with the judge. The judge reads the log; grep reads what actually left.
+    hits = locker.grep("outbox", CANARY)
+    grep_runs = sorted({f.split("/")[-1].removesuffix(".txt") for f, _ in hits})
+    judge_runs = sorted({e["id"] for e in flat
+                         if e["verdict"] == "BLOCK" and e["source"] == "sandbox"})
+    agrees = grep_runs == judge_runs
     secs = round(time.time() - t0, 1)
     write({
         "mode": mode, "seed": seed, "space": 2 ** len(KNOBS), "knobs": KNOBS,
@@ -96,6 +110,10 @@ def main():
         "trigger": trigger,
         "irrelevant": irrelevant,
         "seconds": secs,
+        "evidence": {"locker": locker.where, "canary": CANARY,
+                     "grep_hits": [{"file": f, "line": line} for f, line in hits],
+                     "grep_runs": grep_runs, "judge_runs": judge_runs,
+                     "agrees_with_judge": agrees},
     })
 
     print("\n" + "=" * 70)
@@ -107,6 +125,9 @@ def main():
             print("Doesn't matter: " + ", ".join(irrelevant))
     else:
         print(f"No betrayal found in {len(s.rounds)} rounds (best score {best['score']}/5).")
+    print(f"EVIDENCE: grep '{CANARY}' over the shared outbox -> {len(hits)} hits in "
+          f"{grep_runs or 'no files'}; judge flagged {judge_runs or 'none'} -> "
+          + ("AGREE" if agrees else "MISMATCH"))
     print("=" * 70)
 
 

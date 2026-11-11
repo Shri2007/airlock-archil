@@ -27,7 +27,11 @@ def _eval_one(base, env, run):
         apply(child, env)
         child.ready()
         run_tool(child)
-        return judge(child.recorder, child.run)
+        verdict = judge(child.recorder, child.run)
+        child.recorder.file_run(child.run, verdict)
+        if verdict["score"] == 5:
+            verdict["evidence"] = f"outbox/{child.run}.txt"
+        return verdict
     finally:
         child.destroy()
 
@@ -42,9 +46,12 @@ class Search:
         self.forks = 0
 
     def _row(self, env, rid, v, parent, flipped, source):
-        return {"id": rid, **env.as_dict(), "score": v["score"], "verdict": v["verdict"],
-                "reason": v["reason"], "parent": parent, "flipped": flipped,
-                "source": source}
+        row = {"id": rid, **env.as_dict(), "score": v["score"], "verdict": v["verdict"],
+               "reason": v["reason"], "parent": parent, "flipped": flipped,
+               "source": source}
+        if v.get("evidence"):
+            row["evidence"] = v["evidence"]
+        return row
 
     def _round(self, phase, jobs):
         """jobs: list of (env, parent_id, flipped_knob). Unseen envs run in parallel."""

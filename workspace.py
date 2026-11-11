@@ -61,6 +61,8 @@ class Workspace:
         leaked = tags_in(data)
         kind = "egress" if self.allow_network else "egress-blocked"
         self.recorder.record(self.run, kind, url, leaked=leaked)
+        if self.allow_network:
+            self.recorder.capture_outbound(self.run, url, data)
 
     def ready(self):
         """Hook for backends that batch work; nothing to do locally."""
