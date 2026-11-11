@@ -127,7 +127,7 @@ def attack_by_id(vid):
 # Opt-in only: AIRLOCK_FIXER=claude and ANTHROPIC_API_KEY set. Any failure
 # (no SDK, no key, API error, bad JSON, code that does not compile) returns
 # None and the fixer falls back to the catalog, so the default stays offline.
-CLAUDE_MODEL = os.environ.get("AIRLOCK_FIXER_MODEL", "claude-sonnet-4-5")
+CLAUDE_MODEL = os.environ.get("AIRLOCK_FIXER_MODEL", "claude-opus-5-5")
 
 _CLAUDE_SYSTEM = (
     "You fix a prompt-injection vulnerability in a small Python tool. You get the "

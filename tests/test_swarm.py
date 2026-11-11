@@ -1,10 +1,14 @@
 """Swarm tests (CONTRACTS.md sections 4 and 5): the deterministic scheduler on a
 LocalBoard reproduces the offline story, is repeatable, respects approval, claim
 races and the generation cap, and uses memory on a second run."""
+import os
+import subprocess
+import sys
 import tempfile
 import threading
 import time
 import unittest
+from pathlib import Path
 
 import catalog
 import peers
@@ -211,6 +215,86 @@ class Memory(unittest.TestCase):
         no_bypass = [e for e in b.read_log() if e["event"] == "attack"]
         self.assertEqual(no_bypass[-1]["result"], "no new bypass")
         self.assertEqual(len(b.recall("fixes")), 2)  # no duplicate of the same patch
+
+
+
+class OnArchilFake(unittest.TestCase):
+    """Same roles over ArchilBoard (on the in-memory Archil fake, racy appends)."""
+
+    def board(self, fake=None):
+        from archil_fake import FakeArchil
+        from board_archil import ArchilBoard
+        self.fake = fake or getattr(self, "fake", None) or FakeArchil(racy=True)
+        return ArchilBoard(client=self.fake)
+
+    def test_story_on_archil_board(self):
+        b = self.board()
+        done = run(b)
+        s = b.snapshot()
+        self.assertEqual(done["reason"], "quiescent")
+        self.assertEqual(s["champion"], "v2.a")
+        self.assertEqual({e["version"]: (e["passes"], e["total"]) for e in s["evals"]},
+                         {"v0": (62, 66), "v1.a": (64, 66), "v1.p1": (66, 66), "v2.a": (66, 66)})
+        self.assertEqual(s["memory"], {"fixes": 2, "attacks": 2})
+        self.assertEqual(s["tasks"]["open"], [])
+        seqs = [e["seq"] for e in b.read_log()]
+        self.assertEqual(seqs, list(range(len(seqs))))
+
+    def test_claim_race_on_archil_board(self):
+        b = self.board()
+        run(b, approve=False)
+        b.delete("control/done.json")
+        b.put("control/approved.json", {"by": "cli", "ts": 0})
+        boards = [self.board(self.fake) for _ in range(2)]  # one board per "process"
+        fixers = [peers.make_role("fixer-code", n) for n in (1, 2)]
+        gate = threading.Barrier(2)
+
+        def go(i):
+            gate.wait()
+            fixers[i].step(boards[i])
+        ts = [threading.Thread(target=go, args=(i,)) for i in range(2)]
+        [t.start() for t in ts]
+        [t.join() for t in ts]
+        claims = [e for e in b.read_log() if e["event"] == "claimed" and e["task"] == "fix-code.v0"]
+        self.assertEqual(len(claims), 1)
+        self.assertEqual([v["id"] for v in b.snapshot()["versions"] if v["track"] == "code"],
+                         ["v1.a"])
+
+
+class ProcessMode(unittest.TestCase):
+    """Five real peer processes on one LocalBoard: same story, and every log line
+    gets its own seq (needs a process-safe LocalBoard.log)."""
+
+    def test_five_processes_story_and_unique_seq(self):
+        root = tempfile.mkdtemp(prefix="swarm_proc_")
+        repo = Path(__file__).resolve().parent.parent
+        env = {k: v for k, v in os.environ.items() if k != "AIRLOCK_FIXER"}
+        r = subprocess.run([sys.executable, str(repo / "swarm.py"), "up", "--yes", "--forget",
+                            "--root", root], cwd=repo, env=env, capture_output=True,
+                           text=True, timeout=120)
+        self.assertEqual(r.returncode, 0, r.stderr[-2000:])
+        b = LocalBoard(root)
+        s = b.snapshot()
+        self.assertEqual(s["champion"], "v2.a")
+        self.assertEqual(s["control"]["done"]["reason"], "quiescent")
+        self.assertEqual(sorted(v["id"] for v in s["versions"]), ["v0", "v1.a", "v1.p1", "v2.a"])
+        seqs = [e["seq"] for e in b.read_log()]
+        self.assertEqual(len(seqs), len(set(seqs)), "duplicate log seq across processes")
+        self.assertEqual(sorted(seqs), list(range(len(seqs))))
+
+    def test_concurrent_peer_logging_unique_seq(self):
+        """Stress the same path deterministically: 5 processes x 40 log lines."""
+        root = tempfile.mkdtemp(prefix="swarm_log_")
+        repo = Path(__file__).resolve().parent.parent
+        code = ("import sys; from board import LocalBoard; b = LocalBoard(sys.argv[1])\n"
+                "for i in range(40): b.log(sys.argv[2], 'tick', i=i)")
+        procs = [subprocess.Popen([sys.executable, "-c", code, root, f"peer#{n}"], cwd=repo)
+                 for n in range(5)]
+        for p in procs:
+            self.assertEqual(p.wait(timeout=60), 0)
+        seqs = [e["seq"] for e in LocalBoard(root).read_log()]
+        self.assertEqual(len(seqs), 200)
+        self.assertEqual(len(set(seqs)), 200, "duplicate log seq across processes")
 
 
 if __name__ == "__main__":

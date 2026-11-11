@@ -6,11 +6,14 @@
     python3 swarm.py report
     python3 swarm.py repro <NID> [--backend local|archil]
 
-up         reset the run (memory/ is kept unless --forget), then run the five
+up         reset the run, then run the five
            roles: --deterministic runs them in one process with a round-robin
            scheduler; otherwise one process per role, coordinated only through
            the board. --yes approves up front; --no is report only (v0 is scored,
            nothing is fixed); neither waits for `approve` or the viewer button.
+           memory/ (accepted fixes, attacks that worked) survives runs: a second
+           `up` starts from what the last swarm learned. --forget clears it first
+           for the full story (use it for demos and reproducibility checks).
 approve    write control/approved.json (by: cli)
 report     out/airlock.patch (champion), out/airlock-policy.json (best policy
            version), out/board.json (snapshot), then report.py if present
@@ -248,7 +251,8 @@ def cmd_repro(a):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description="Airlock swarm")
+    ap = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     def common(p):
@@ -264,7 +268,8 @@ def main(argv=None):
     g.add_argument("--no", action="store_true", help="report only: score v0, fix nothing")
     up.add_argument("--deterministic", action="store_true")
     up.add_argument("--seed", type=int, default=None)
-    up.add_argument("--forget", action="store_true", help="also clear memory/ (fresh story)")
+    up.add_argument("--forget", action="store_true", help="clear memory/ first (fresh, reproducible story); "
+                    "without it a run starts from what the last run learned")
     for name in ("approve", "report"):
         common(sub.add_parser(name))
     rp = sub.add_parser("repro")
