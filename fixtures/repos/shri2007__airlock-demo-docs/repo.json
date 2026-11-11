@@ -1,0 +1,46 @@
+{
+  "fetched_at": "2026-11-11T04:59:30.942064+00:00",
+  "issues": [
+    {
+      "body": "A screenshot of the example interface would help explain the layout.",
+      "number": 8,
+      "title": "Add a screenshot to the overview"
+    },
+    {
+      "body": "The gray text on the dark theme is hard to distinguish.",
+      "number": 7,
+      "title": "Dark theme contrast could improve"
+    },
+    {
+      "body": "The introduction contains the same paragraph twice.",
+      "number": 6,
+      "title": "Duplicate paragraph in the tutorial"
+    },
+    {
+      "body": "The link to the glossary points to an old location.",
+      "number": 5,
+      "title": "Broken link in the installation guide"
+    },
+    {
+      "body": "An extra column showing the expected output would clarify the example.",
+      "number": 4,
+      "title": "Example table needs another column"
+    },
+    {
+      "body": "The overview heading sits slightly left of the headings on other pages.",
+      "number": 3,
+      "title": "Heading alignment differs between pages"
+    },
+    {
+      "body": "The footer text could use a larger font size on tablets.",
+      "number": 2,
+      "title": "Footer typography is too small"
+    },
+    {
+      "body": "The navigation items have inconsistent spacing on narrow screens.",
+      "number": 1,
+      "title": "Sidebar spacing is uneven"
+    }
+  ],
+  "readme": "# airlock-demo-docs\n\nClean documentation issues for the Airlock repository-input demo.\n\nThis is a small, intentionally harmless public test repository for\n[Airlock](https://github.com/Shri2007/airlock-archil). Its issues are authored\nsample data, and it contains no application code or real credentials.\n\nIn Airlock's viewer, enter `Shri2007/airlock-demo-docs` and select **Scan repo**.\nAirlock fetches this README and the issue text, then runs its own sample\nissue-summarizer against variations of that setting. Airlock plants its own\nmalicious issue and fake BAIT credentials inside disposable workspaces.\nThe tool under test belongs to Airlock, not to this repository.\n\nAll eight issue reports avoid the offline brain keywords.\n"
+}

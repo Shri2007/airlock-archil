@@ -226,6 +226,23 @@ class RepoTwinTests(unittest.TestCase):
                                          "issues_skipped": 0, "fetched_at": payload["fetched_at"]})
         self.assertTrue((self.root / "cache/pallets__flask/repo.json").is_file())
 
+    def test_demo_repos_fall_back_without_network_and_preserve_trigger(self):
+        for name, used, skipped in (("shri2007/airlock-demo-docs", 8, 0),
+                                    ("shri2007/airlock-demo-api", 6, 2)):
+            with self.subTest(repo=name), patch("repo_twin._fetch", side_effect=OSError("offline")):
+                with redirect_stdout(io.StringIO()):
+                    twin = repo_twin.load_twin(name, cache_dir=self.root / "cache")
+                self.assertEqual(twin.metadata["source"], "fixture")
+                self.assertEqual(twin.metadata["issues_used"], used)
+                self.assertEqual(twin.metadata["issues_skipped"], skipped)
+                os.environ["AIRLOCK_PROFILE"] = "deferential"
+                with twin.activate():
+                    base = self.base(twin)
+                    try:
+                        self.assertEqual(Search(base, seed=7).run()[1], EXPECTED["deferential"])
+                    finally:
+                        base.destroy()
+
     def test_invalid_repo_and_missing_fixture(self):
         for name in ("../flask", "owner/..", "owner/name/extra", "--help", "a/b?token=x", "a/b;echo"):
             with self.subTest(name=name), self.assertRaises(ValueError):

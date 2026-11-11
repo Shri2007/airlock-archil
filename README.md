@@ -274,8 +274,9 @@ The original toy twin remains the default when `--repo` is omitted.
 The interactive local viewer at `http://127.0.0.1:8001/viewer.html` accepts an
 `owner/name` or GitHub URL. **Scan repo** starts a new scan, shows its progress,
 and loads the new results automatically. Local demo is the default; select
-**Archil microVMs** for a live sandbox run. **Flask offline fixture** forces the
-committed Flask data for a demo without GitHub access. This input requires
+**Archil microVMs** for a live sandbox run. **Offline fixture** forces committed data for a demo without GitHub access.
+Fixtures are included for `pallets/flask`, `Shri2007/airlock-demo-docs`, and
+`Shri2007/airlock-demo-api`. Live fetches fall back to these fixtures automatically. This input requires
 `serve.py`; a static file server can only replay saved results.
 
 `serve.py` binds to `127.0.0.1` only, checks the `Host` and `Origin` headers,
