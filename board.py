@@ -104,19 +104,32 @@ class LocalBoard:
     def snapshot(self):
         names = lambda d: [p.rsplit("/", 1)[-1] for p in self.list(f"tasks/{d}")]
         recs = lambda prefix: [self.get(p) for p in self.list(prefix)]
+        nodes, versions, evals = recs("nodes"), recs("versions"), recs("evals")
         return {
             "control": {"approved": self.get("control/approved.json"),
                         "done": self.get("control/done.json")},
             "scan": self.get("scan/results.json") or {},
-            "findings": recs("findings"),
+            "nodes": nodes, "versions": versions, "evals": evals,
             "tasks": {d: names(d) for d in ("open", "claimed", "done")},
-            "candidates": recs("candidates"),
-            "attacks": recs("attacks"),
-            "verdicts": recs("verdicts"),
-            "repro": recs("repro"),
+            "champion": champion(versions, evals, len(nodes)),
             "memory": {k: len(self.recall(k)) for k in ("fixes", "attacks")},
             "log_len": len(self.read_log()),
         }
+
+
+def champion(versions, evals, node_count):
+    """CONTRACTS.md section 2: best fresh, useful code-track version (or v0)."""
+    by_id = {e["version"]: e for e in evals}
+    best = None
+    for v in versions:
+        e = by_id.get(v["id"])
+        if v["track"] == "policy" or not e or not e.get("utility") \
+                or e.get("nodes_seen", 0) < node_count:
+            continue
+        key = (-e["passes"], len(v.get("patch", "")), v["generation"])
+        if best is None or key < best[0]:
+            best = (key, v["id"])
+    return best[1] if best else None
 
 
 def open_board(kind=None, **kw):

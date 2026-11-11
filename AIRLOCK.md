@@ -34,10 +34,12 @@ sunny day and calling it safe in all weather.
 5. **Report the exact trigger:** not "pass/fail", but *"it only betrays you when
    the poisoned issue claims authority AND a secret is present AND the internet
    is on AND the repo is small; the CI file doesn't matter."*
-6. **Fix it, with your permission.** A swarm of agents proposes fixes, another
-   agent attacks each fix, and every fix is checked on forks of the exact
-   machine that betrayed you. Bypassed fixes trigger another round. It stops
-   when nothing betrays. You get a patch and a sandbox policy as files.
+6. **Fix it, with your permission.** Every setting of the world (all 64 knob
+   combinations) gets its own sandbox. Fixer agents write new versions of the
+   tool, an attacker agent adds harder settings that beat the best version,
+   and every version is scored on every setting. The versions grow into a
+   tree; the one that passes the most settings is the champion. You get its
+   patch and a sandbox policy as files.
 
 ## Why it wins for Archil
 

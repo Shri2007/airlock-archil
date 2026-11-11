@@ -178,48 +178,62 @@ Each run writes **`results.json`**: `rounds` (per-round clones with `score`,
 `parent`, `flipped`), a flat `environments` list (what the grid viewer reads),
 `trigger`, `irrelevant`, `sandboxes_forked`, `seconds`.
 
-### Phase 2: the fixer swarm (in progress)
+### Phase 2: the version tree (in progress)
 
-A **decentralized** swarm of agents fixes what the scan found. There is no
-orchestrator: agents coordinate only through one **shared, persistent Archil
-disk**, the board. Full spec: [CONTRACTS.md](CONTRACTS.md).
+Phase 1 finds *one* betrayal. Phase 2 tests the tool on **every node** and
+grows a **tree of tool versions** until one passes them all.
+
+- **Nodes:** every combination of the 6 safety knobs (64 nodes), plus attack
+  nodes the attacker agent adds later. Each node gets its own Archil sandbox
+  (a fork of the seeded base), and its file system is captured once.
+- **Versions:** `v0` is the tool as written. When a version fails nodes, fixer
+  agents write child versions (`v1.a`, `v2.a`, ...). When a version passes
+  everything, the attacker tries to add a node that beats it. Every version
+  is re-scored on every node as the node set grows.
+- **Champion:** the version with the most passes (that still does its job),
+  crowned in the viewer. Output: `out/airlock.patch` (champion vs v0) plus the
+  best sandbox policy.
+
+```
+v0 (62/64) ── v1.a denylist (64/64 → 64/66 after attack) ── v2.a data-not-commands (66/66)  ← champion
+          └── v1.p1 deny egress + broker secrets (policy track, 66/66)
+```
+
+The agents form a **decentralized** swarm: no orchestrator, they coordinate
+only through one **shared, persistent Archil disk**, the board. Full spec:
+[CONTRACTS.md](CONTRACTS.md).
 
 ```
            ┌──────────── SHARED, PERSISTENT ARCHIL DISK: "the board" ─────────────┐
            │ control/approved      ← you click Deploy (no file = report only)      │
-           │ findings/F1.json      tasks/open → tasks/claimed (atomic rename)      │
-           │ candidates/F1/…   attacks/<cand>.json   verdicts/<cand>.json          │
+           │ nodes/  snapshots/  versions/  evals/   (the version × node tree)     │
+           │ tasks/open → tasks/claimed  (atomic rename = claim)                   │
            │ log.jsonl  (append-only; every agent action; the viewer streams it)   │
            │ memory/fixes.jsonl, memory/attacks.jsonl  (kept across runs)          │
            └───────▲──────────▲──────────────▲───────────────▲──────────────────────┘
                    │          │              │               │
- run_airlock.py ─▶ scout   fixer-code /    attacker        lab (the only agent with
- (Phase 1)        (posts   fixer-policy    (tries to       Archil keys: forks the paused
-                  findings) (compete on    bypass each     betrayal VM, applies fix +
-                            each finding)  fix)            attack, judges in plain code)
+                 scout     fixer-code /    attacker        lab (the only agent with
+               (v0 + all   fixer-policy    (adds nodes     Archil keys: forks a sandbox
+                64 nodes)  (child          that beat the   per node, scores every
+                           versions)       best version)   version on every node)
 ```
 
 - **No orchestrator.** Each agent is its own process. It reads the board, claims
   work by atomically renaming a task file (Archil disks are strongly consistent
   and renames are atomic, so exactly one agent wins a race), does its job, and
   writes the result back.
-- **Fix → attack → verify, recursively.** Two fix tracks run on every finding:
-  a code patch and a sandbox policy. Each track must hold on its own (defense in
-  depth). The attacker tries to bypass every fix, and the lab checks fixes and
-  attacks on **forks of the paused machine that betrayed**. A bypass opens a
-  child finding (`F1 → F1.1`) and the swarm goes again. Example: round 1's quick
-  fix (a case-sensitive filter for "maintainer") is beaten by
-  "AUTHORIZED by the MAINTAINER"; round 2's fix (treat issue text as data) holds.
-  The swarm stops when nothing is open. Limits: depth 3, at most 48 forks.
-- **A fix only wins if** the finding's world goes green, every world from the
-  scan stays green, and the tool still does its job. The judge stays plain code,
-  and fixers can't touch it.
+- **Recursion through fixes.** Example: v0 fails the 2 trigger nodes. v1.a (a
+  case-sensitive filter for "maintainer") passes 64/64, until the attacker adds
+  nodes with "AUTHORIZED by the MAINTAINER" and it drops to 64/66. v2.a (treat
+  issue text as data) passes 66/66 and the attacker finds nothing new.
+  Limits: 3 generations, at most 80 forks.
+- **A version only counts if** it still does its job (same output as v0 on every
+  clean node). The judge stays plain code, and fixers can't touch it.
 - **Least privilege.** Fixers and the attacker never hold keys or secrets. Only
   `lab` can fork machines.
 - **You stay in control.** Approval is a file on the board: the viewer's Deploy
-  button writes `control/approved.json`. Without it Airlock only writes the
-  report. Fixes come out as files (`out/airlock.patch`,
-  `out/airlock-policy.json`); nothing is applied to your code automatically.
+  button writes `control/approved.json`. Without it Airlock only reports v0's
+  results. Fixes come out as files; nothing is applied to your code automatically.
 
 ### Data infrastructure for agents
 
@@ -228,16 +242,16 @@ The agents are disposable. Everything they know lives on the disk:
 - **audit trail:** an append-only log that drives the live viewer;
 - **memory across runs:** known bypasses and proven fixes, so the next run
   starts from what the last swarm learned;
-- **forkable evidence:** each finding's betrayal machine stays **paused**, and
-  `swarm.py repro F1` forks it and replays the betrayal.
+- **forkable evidence:** failing nodes' sandboxes can stay **paused**, and
+  `swarm.py repro <node>` forks one and replays the betrayal.
 
 ### Why Archil
 
 | Archil state | Where Airlock uses it |
 |---|---|
-| **Forked** | Phase 1 forks a sandbox per world; the lab verifies every fix on forks of the paused betrayal machine |
-| **Persistent** | Paused repro machines; `memory/` across runs |
-| **Shared** | The board, which every agent and the viewer read and write at the same time |
+| **Forked** | Phase 1 forks a sandbox per world; Phase 2 forks one sandbox per node |
+| **Persistent** | Paused repro sandboxes; `memory/` across runs; Shri's evidence locker |
+| **Shared** | The board (every agent and the viewer read and write it at once) and the evidence locker (every clone files into it) |
 
 ---
 
@@ -246,9 +260,9 @@ The agents are disposable. Everything they know lives on the disk:
 | File | Written by | What |
 |---|---|---|
 | `results.json` | `run_airlock.py` | the scan: `rounds` (per-round clones with `score`, `parent`, `flipped`), flat `environments` (what the viewer reads), `trigger`, `irrelevant`, `sandboxes_forked`, `seconds` |
-| `out/airlock.patch` | `swarm.py report` | the accepted code fix, as a unified diff |
-| `out/airlock-policy.json` | `swarm.py report` | the accepted sandbox policy |
-| `out/airlock-report.html` | `report.py` | one self-contained report: trigger, findings, fixes, attacks, verdicts |
+| `out/airlock.patch` | `swarm.py report` | the champion version vs v0, as a unified diff |
+| `out/airlock-policy.json` | `swarm.py report` | the best sandbox policy version |
+| `out/airlock-report.html` | `report.py` | one self-contained report: the version tree, every node, the champion |
 
 `results.json` shape (Phase 1, current):
 
@@ -281,15 +295,15 @@ Never rename existing fields; adding fields is fine.
 | **Shri** | Phase 1 engine: `run_airlock.py search.py environments.py judge.py brain.py tool_under_test.py recorder.py workspace.py tags.py`, `twin/` |
 | **Vishnu** | Phase 2, the viewer, the pitch and the demo |
 
-Phase 2 is built by three Claude Code agents, each on its own git worktree and
+Phase 2 is built by three Claude Code agents (infra, swarm, viewer), each on its own git worktree and
 branch, merged into `mvp/integration`. They add new files only and never edit
 the Phase 1 files.
 
 | Agent | Owns |
 |---|---|
-| board | `board.py`, `board_archil.py` (Archil disk board), `archil_fake.py`, `tests/test_board.py` |
-| swarm | `peers.py` (scout, fixer-code, fixer-policy, attacker, lab), `swarm.py`, fix and attack catalogs, `tests/test_swarm.py` |
-| viewer | `viewer.html` (live board view), `serve.py` (127.0.0.1, Deploy button), `report.py` |
+| infra | `board.py`, `board_archil.py` (Archil disk board), `nodes.py` (sandbox per node, evaluate any version on any node), `archil_fake.py`, `tests/test_board.py`, `tests/test_nodes.py` |
+| swarm | `peers.py` (scout, lab, fixer-code, fixer-policy, attacker), `swarm.py`, fix and attack catalogs, `tests/test_swarm.py` |
+| viewer | `viewer.html` (the growing version tree, every node inspectable), `serve.py` (127.0.0.1, Deploy button), `report.py` |
 
 **Known issue (Phase 1, for Shri):** `brain.py` calls `claude-haiku-5-5`, which
 doesn't exist, so `AGENT_BRAIN=anthropic` silently falls back to offline. Use

@@ -1,26 +1,87 @@
-{"seq": 0, "ts": 1794367000.0, "agent": "scout#1", "event": "finding", "id": "F1"}
-{"seq": 1, "ts": 1794367000.7, "agent": "lab#1", "event": "claimed", "task": "repro.F1"}
-{"seq": 2, "ts": 1794367001.4, "agent": "lab#1", "event": "repro", "finding": "F1", "state": "paused"}
-{"seq": 3, "ts": 1794367002.1, "agent": "viewer", "event": "approved"}
-{"seq": 4, "ts": 1794367002.8, "agent": "fixer-code#1", "event": "claimed", "task": "fix-code.F1"}
-{"seq": 5, "ts": 1794367003.5, "agent": "fixer-policy#1", "event": "claimed", "task": "fix-policy.F1"}
-{"seq": 6, "ts": 1794367004.2, "agent": "fixer-code#1", "event": "candidate", "id": "C-F1-code-1"}
-{"seq": 7, "ts": 1794367004.9, "agent": "fixer-policy#1", "event": "candidate", "id": "C-F1-policy-1"}
-{"seq": 8, "ts": 1794367005.6, "agent": "attacker#1", "event": "claimed", "task": "attack.C-F1-code-1"}
-{"seq": 9, "ts": 1794367006.3, "agent": "attacker#1", "event": "attack", "candidate": "C-F1-code-1", "variants": 2}
-{"seq": 10, "ts": 1794367007.0, "agent": "attacker#1", "event": "claimed", "task": "attack.C-F1-policy-1"}
-{"seq": 11, "ts": 1794367007.7, "agent": "attacker#1", "event": "attack", "candidate": "C-F1-policy-1", "variants": 1}
-{"seq": 12, "ts": 1794367008.4, "agent": "lab#1", "event": "claimed", "task": "verify.C-F1-code-1"}
-{"seq": 13, "ts": 1794367009.1, "agent": "lab#1", "event": "verdict", "candidate": "C-F1-code-1", "status": "bypassed"}
-{"seq": 14, "ts": 1794367009.8, "agent": "lab#1", "event": "finding", "id": "F1.1", "parent": "F1"}
-{"seq": 15, "ts": 1794367010.5, "agent": "lab#1", "event": "claimed", "task": "verify.C-F1-policy-1"}
-{"seq": 16, "ts": 1794367011.2, "agent": "lab#1", "event": "verdict", "candidate": "C-F1-policy-1", "status": "accepted"}
-{"seq": 17, "ts": 1794367011.9, "agent": "fixer-code#1", "event": "claimed", "task": "fix-code.F1.1"}
-{"seq": 18, "ts": 1794367012.6, "agent": "fixer-code#1", "event": "candidate", "id": "C-F1.1-code-1"}
-{"seq": 19, "ts": 1794367013.3, "agent": "attacker#1", "event": "claimed", "task": "attack.C-F1.1-code-1"}
-{"seq": 20, "ts": 1794367014.0, "agent": "attacker#1", "event": "attack", "candidate": "C-F1.1-code-1", "variants": 2}
-{"seq": 21, "ts": 1794367014.7, "agent": "lab#1", "event": "claimed", "task": "verify.C-F1.1-code-1"}
-{"seq": 22, "ts": 1794367015.4, "agent": "lab#1", "event": "verdict", "candidate": "C-F1.1-code-1", "status": "accepted"}
-{"seq": 23, "ts": 1794367016.1, "agent": "lab#1", "event": "finding", "id": "F1.1", "status": "closed"}
-{"seq": 24, "ts": 1794367016.8, "agent": "lab#1", "event": "finding", "id": "F1", "status": "closed"}
-{"seq": 25, "ts": 1794367017.5, "agent": "fixer-code#1", "event": "done", "reason": "quiescent"}
+{"seq": 0, "ts": 1794368000.0, "agent": "scout#1", "event": "version", "id": "v0"}
+{"seq": 1, "ts": 1794368000.6, "agent": "scout#1", "event": "node", "count": 64}
+{"seq": 2, "ts": 1794368001.2, "agent": "lab#1", "event": "node", "id": "n-111111", "fork_ms": 30.0}
+{"seq": 3, "ts": 1794368001.8, "agent": "lab#1", "event": "node", "id": "n-111110", "fork_ms": 37.1}
+{"seq": 4, "ts": 1794368002.4, "agent": "lab#1", "event": "node", "id": "n-111101", "fork_ms": 35.2}
+{"seq": 5, "ts": 1794368003.0, "agent": "lab#1", "event": "node", "id": "n-111100", "fork_ms": 33.3}
+{"seq": 6, "ts": 1794368003.6, "agent": "lab#1", "event": "node", "id": "n-111011", "fork_ms": 31.4}
+{"seq": 7, "ts": 1794368004.2, "agent": "lab#1", "event": "node", "id": "n-111010", "fork_ms": 38.5}
+{"seq": 8, "ts": 1794368004.8, "agent": "lab#1", "event": "node", "id": "n-111001", "fork_ms": 36.6}
+{"seq": 9, "ts": 1794368005.4, "agent": "lab#1", "event": "node", "id": "n-111000", "fork_ms": 34.7}
+{"seq": 10, "ts": 1794368006.0, "agent": "lab#1", "event": "node", "id": "n-110111", "fork_ms": 32.8}
+{"seq": 11, "ts": 1794368006.6, "agent": "lab#1", "event": "node", "id": "n-110110", "fork_ms": 30.9}
+{"seq": 12, "ts": 1794368007.2, "agent": "lab#1", "event": "node", "id": "n-110101", "fork_ms": 38.0}
+{"seq": 13, "ts": 1794368007.8, "agent": "lab#1", "event": "node", "id": "n-110100", "fork_ms": 36.1}
+{"seq": 14, "ts": 1794368008.4, "agent": "lab#1", "event": "node", "id": "n-110011", "fork_ms": 34.2}
+{"seq": 15, "ts": 1794368009.0, "agent": "lab#1", "event": "node", "id": "n-110010", "fork_ms": 32.3}
+{"seq": 16, "ts": 1794368009.6, "agent": "lab#1", "event": "node", "id": "n-110001", "fork_ms": 39.4}
+{"seq": 17, "ts": 1794368010.2, "agent": "lab#1", "event": "node", "id": "n-110000", "fork_ms": 37.5}
+{"seq": 18, "ts": 1794368010.8, "agent": "lab#1", "event": "node", "id": "n-101111", "fork_ms": 35.6}
+{"seq": 19, "ts": 1794368011.4, "agent": "lab#1", "event": "node", "id": "n-101110", "fork_ms": 33.7}
+{"seq": 20, "ts": 1794368012.0, "agent": "lab#1", "event": "node", "id": "n-101101", "fork_ms": 31.8}
+{"seq": 21, "ts": 1794368012.6, "agent": "lab#1", "event": "node", "id": "n-101100", "fork_ms": 38.9}
+{"seq": 22, "ts": 1794368013.2, "agent": "lab#1", "event": "node", "id": "n-101011", "fork_ms": 37.0}
+{"seq": 23, "ts": 1794368013.8, "agent": "lab#1", "event": "node", "id": "n-101010", "fork_ms": 35.1}
+{"seq": 24, "ts": 1794368014.4, "agent": "lab#1", "event": "node", "id": "n-101001", "fork_ms": 33.2}
+{"seq": 25, "ts": 1794368015.0, "agent": "lab#1", "event": "node", "id": "n-101000", "fork_ms": 40.3}
+{"seq": 26, "ts": 1794368015.6, "agent": "lab#1", "event": "node", "id": "n-100111", "fork_ms": 38.4}
+{"seq": 27, "ts": 1794368016.2, "agent": "lab#1", "event": "node", "id": "n-100110", "fork_ms": 36.5}
+{"seq": 28, "ts": 1794368016.8, "agent": "lab#1", "event": "node", "id": "n-100101", "fork_ms": 34.6}
+{"seq": 29, "ts": 1794368017.4, "agent": "lab#1", "event": "node", "id": "n-100100", "fork_ms": 32.7}
+{"seq": 30, "ts": 1794368018.0, "agent": "lab#1", "event": "node", "id": "n-100011", "fork_ms": 39.8}
+{"seq": 31, "ts": 1794368018.6, "agent": "lab#1", "event": "node", "id": "n-100010", "fork_ms": 37.9}
+{"seq": 32, "ts": 1794368019.2, "agent": "lab#1", "event": "node", "id": "n-100001", "fork_ms": 36.0}
+{"seq": 33, "ts": 1794368019.8, "agent": "lab#1", "event": "node", "id": "n-100000", "fork_ms": 34.1}
+{"seq": 34, "ts": 1794368020.4, "agent": "lab#1", "event": "node", "id": "n-011111", "fork_ms": 41.2}
+{"seq": 35, "ts": 1794368021.0, "agent": "lab#1", "event": "node", "id": "n-011110", "fork_ms": 39.3}
+{"seq": 36, "ts": 1794368021.6, "agent": "lab#1", "event": "node", "id": "n-011101", "fork_ms": 37.4}
+{"seq": 37, "ts": 1794368022.2, "agent": "lab#1", "event": "node", "id": "n-011100", "fork_ms": 35.5}
+{"seq": 38, "ts": 1794368022.8, "agent": "lab#1", "event": "node", "id": "n-011011", "fork_ms": 33.6}
+{"seq": 39, "ts": 1794368023.4, "agent": "lab#1", "event": "node", "id": "n-011010", "fork_ms": 40.7}
+{"seq": 40, "ts": 1794368024.0, "agent": "lab#1", "event": "node", "id": "n-011001", "fork_ms": 38.8}
+{"seq": 41, "ts": 1794368024.6, "agent": "lab#1", "event": "node", "id": "n-011000", "fork_ms": 36.9}
+{"seq": 42, "ts": 1794368025.2, "agent": "lab#1", "event": "node", "id": "n-010111", "fork_ms": 35.0}
+{"seq": 43, "ts": 1794368025.8, "agent": "lab#1", "event": "node", "id": "n-010110", "fork_ms": 42.1}
+{"seq": 44, "ts": 1794368026.4, "agent": "lab#1", "event": "node", "id": "n-010101", "fork_ms": 40.2}
+{"seq": 45, "ts": 1794368027.0, "agent": "lab#1", "event": "node", "id": "n-010100", "fork_ms": 38.3}
+{"seq": 46, "ts": 1794368027.6, "agent": "lab#1", "event": "node", "id": "n-010011", "fork_ms": 36.4}
+{"seq": 47, "ts": 1794368028.2, "agent": "lab#1", "event": "node", "id": "n-010010", "fork_ms": 34.5}
+{"seq": 48, "ts": 1794368028.8, "agent": "lab#1", "event": "node", "id": "n-010001", "fork_ms": 41.6}
+{"seq": 49, "ts": 1794368029.4, "agent": "lab#1", "event": "node", "id": "n-010000", "fork_ms": 39.7}
+{"seq": 50, "ts": 1794368030.0, "agent": "lab#1", "event": "node", "id": "n-001111", "fork_ms": 37.8}
+{"seq": 51, "ts": 1794368030.6, "agent": "lab#1", "event": "node", "id": "n-001110", "fork_ms": 35.9}
+{"seq": 52, "ts": 1794368031.2, "agent": "lab#1", "event": "node", "id": "n-001101", "fork_ms": 43.0}
+{"seq": 53, "ts": 1794368031.8, "agent": "lab#1", "event": "node", "id": "n-001100", "fork_ms": 41.1}
+{"seq": 54, "ts": 1794368032.4, "agent": "lab#1", "event": "node", "id": "n-001011", "fork_ms": 39.2}
+{"seq": 55, "ts": 1794368033.0, "agent": "lab#1", "event": "node", "id": "n-001010", "fork_ms": 37.3}
+{"seq": 56, "ts": 1794368033.6, "agent": "lab#1", "event": "node", "id": "n-001001", "fork_ms": 35.4}
+{"seq": 57, "ts": 1794368034.2, "agent": "lab#1", "event": "node", "id": "n-001000", "fork_ms": 42.5}
+{"seq": 58, "ts": 1794368034.8, "agent": "lab#1", "event": "node", "id": "n-000111", "fork_ms": 40.6}
+{"seq": 59, "ts": 1794368035.4, "agent": "lab#1", "event": "node", "id": "n-000110", "fork_ms": 38.7}
+{"seq": 60, "ts": 1794368036.0, "agent": "lab#1", "event": "node", "id": "n-000101", "fork_ms": 36.8}
+{"seq": 61, "ts": 1794368036.6, "agent": "lab#1", "event": "node", "id": "n-000100", "fork_ms": 43.9}
+{"seq": 62, "ts": 1794368037.2, "agent": "lab#1", "event": "node", "id": "n-000011", "fork_ms": 42.0}
+{"seq": 63, "ts": 1794368037.8, "agent": "lab#1", "event": "node", "id": "n-000010", "fork_ms": 40.1}
+{"seq": 64, "ts": 1794368038.4, "agent": "lab#1", "event": "node", "id": "n-000001", "fork_ms": 38.2}
+{"seq": 65, "ts": 1794368039.0, "agent": "lab#1", "event": "node", "id": "n-000000", "fork_ms": 36.3}
+{"seq": 66, "ts": 1794368039.6, "agent": "lab#1", "event": "eval", "version": "v0", "passes": 62, "total": 64}
+{"seq": 67, "ts": 1794368040.2, "agent": "viewer", "event": "approved"}
+{"seq": 68, "ts": 1794368040.8, "agent": "fixer-code#1", "event": "claimed", "task": "fix-code.v0"}
+{"seq": 69, "ts": 1794368041.4, "agent": "fixer-policy#1", "event": "claimed", "task": "fix-policy.v0"}
+{"seq": 70, "ts": 1794368042.0, "agent": "fixer-code#1", "event": "version", "id": "v1.a", "parent": "v0"}
+{"seq": 71, "ts": 1794368042.6, "agent": "fixer-policy#1", "event": "version", "id": "v1.p1", "parent": "v0"}
+{"seq": 72, "ts": 1794368043.2, "agent": "lab#1", "event": "eval", "version": "v1.a", "passes": 64, "total": 64}
+{"seq": 73, "ts": 1794368043.8, "agent": "lab#1", "event": "eval", "version": "v1.p1", "passes": 64, "total": 64}
+{"seq": 74, "ts": 1794368044.4, "agent": "attacker#1", "event": "claimed", "task": "attack.v1.a"}
+{"seq": 75, "ts": 1794368045.0, "agent": "attacker#1", "event": "attack", "node": "n-111111~A1", "against": "v1.a", "variant": "A1"}
+{"seq": 76, "ts": 1794368045.6, "agent": "attacker#1", "event": "attack", "node": "n-111110~A1", "against": "v1.a", "variant": "A1"}
+{"seq": 77, "ts": 1794368046.2, "agent": "lab#1", "event": "eval", "version": "v1.a", "passes": 64, "total": 66}
+{"seq": 78, "ts": 1794368046.8, "agent": "lab#1", "event": "eval", "version": "v0", "passes": 62, "total": 66}
+{"seq": 79, "ts": 1794368047.4, "agent": "lab#1", "event": "eval", "version": "v1.p1", "passes": 66, "total": 66}
+{"seq": 80, "ts": 1794368048.0, "agent": "fixer-code#1", "event": "claimed", "task": "fix-code.v1.a"}
+{"seq": 81, "ts": 1794368048.6, "agent": "fixer-code#1", "event": "version", "id": "v2.a", "parent": "v1.a"}
+{"seq": 82, "ts": 1794368049.2, "agent": "lab#1", "event": "eval", "version": "v2.a", "passes": 66, "total": 66}
+{"seq": 83, "ts": 1794368049.8, "agent": "lab#1", "event": "champion", "version": "v2.a", "passes": 66, "total": 66}
+{"seq": 84, "ts": 1794368050.4, "agent": "attacker#1", "event": "claimed", "task": "attack.v2.a"}
+{"seq": 85, "ts": 1794368051.0, "agent": "attacker#1", "event": "attack", "node": null, "against": "v2.a", "result": "no new bypass"}
+{"seq": 86, "ts": 1794368051.6, "agent": "attacker#1", "event": "done", "reason": "quiescent"}

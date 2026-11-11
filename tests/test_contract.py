@@ -43,9 +43,20 @@ class LocalBoardContract(unittest.TestCase):
 
     def test_snapshot_shape(self):
         snap = self.b.snapshot()
-        for k in ("control", "scan", "findings", "tasks", "candidates", "attacks",
-                  "verdicts", "repro", "memory", "log_len"):
+        for k in ("control", "scan", "nodes", "versions", "evals", "tasks",
+                  "champion", "memory", "log_len"):
             self.assertIn(k, snap)
+
+    def test_champion_rule(self):
+        from board import champion
+        vs = [{"id": "v0", "track": "base", "generation": 0, "patch": ""},
+              {"id": "v1.a", "track": "code", "generation": 1, "patch": "xx"},
+              {"id": "v1.p1", "track": "policy", "generation": 1, "patch": ""},
+              {"id": "v2.a", "track": "code", "generation": 2, "patch": "xxxx"}]
+        ev = lambda v, p, u=True, seen=66: {"version": v, "passes": p, "utility": u, "nodes_seen": seen}
+        self.assertEqual(champion(vs, [ev("v0", 62), ev("v1.a", 64), ev("v1.p1", 66), ev("v2.a", 66)], 66), "v2.a")
+        self.assertEqual(champion(vs, [ev("v0", 62), ev("v1.a", 64), ev("v2.a", 66, u=False)], 66), "v1.a")
+        self.assertEqual(champion(vs, [ev("v0", 62), ev("v1.a", 64, seen=64)], 66), "v0")
 
     def test_open_board_default_local(self):
         self.assertEqual(open_board(root=self.b.root).kind, "local")
