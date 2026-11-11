@@ -13,6 +13,7 @@ Free-tier sandboxes live at most ~30 min, so keep the crime scene for the demo
 by running the search shortly before you present.
 """
 import json
+import os
 import re
 import time
 from pathlib import Path
@@ -131,6 +132,12 @@ def previous_scene():
 def repro(args):
     scene = previous_scene()
     if "--cleanup" in args:  # works even with no record: it also sweeps orphans
+        # Explicit intent to delete: do not require USE_ARCHIL=1. Without this the
+        # command silently skipped live sandboxes and leaked free-tier slots.
+        if os.environ.get("ARCHIL_API_KEY"):
+            os.environ["USE_ARCHIL"] = "1"
+            from workspace import _archil_setup
+            _archil_setup()
         cleanup(scene)
         return
     if not scene:
