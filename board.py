@@ -1,8 +1,8 @@
 """The board: shared state for the fixer swarm (see CONTRACTS.md section 1).
 
 Every peer reads and writes the board; nothing else connects them. LocalBoard
-is a directory. ArchilBoard (Archil disk) is added by the board agent with the
-same methods.
+is a directory. ArchilBoard (board_archil.py, one Archil disk) has the same
+methods; both build snapshot() with build_snapshot() below.
 """
 import json
 import os
@@ -102,19 +102,24 @@ class LocalBoard:
                 child.unlink()
 
     def snapshot(self):
-        names = lambda d: [p.rsplit("/", 1)[-1] for p in self.list(f"tasks/{d}")]
-        recs = lambda prefix: [self.get(p) for p in self.list(prefix)]
-        nodes, versions, evals = recs("nodes"), recs("versions"), recs("evals")
-        return {
-            "control": {"approved": self.get("control/approved.json"),
-                        "done": self.get("control/done.json")},
-            "scan": self.get("scan/results.json") or {},
-            "nodes": nodes, "versions": versions, "evals": evals,
-            "tasks": {d: names(d) for d in ("open", "claimed", "done")},
-            "champion": champion(versions, evals, len(nodes)),
-            "memory": {k: len(self.recall(k)) for k in ("fixes", "attacks")},
-            "log_len": len(self.read_log()),
-        }
+        return build_snapshot(self)
+
+
+def build_snapshot(board):
+    """CONTRACTS.md section 6. Shared by every backend so shapes are identical."""
+    names = lambda d: [p.rsplit("/", 1)[-1] for p in board.list(f"tasks/{d}")]
+    recs = lambda prefix: [r for r in (board.get(p) for p in board.list(prefix)) if r is not None]
+    nodes, versions, evals = recs("nodes"), recs("versions"), recs("evals")
+    return {
+        "control": {"approved": board.get("control/approved.json"),
+                    "done": board.get("control/done.json")},
+        "scan": board.get("scan/results.json") or {},
+        "nodes": nodes, "versions": versions, "evals": evals,
+        "tasks": {d: names(d) for d in ("open", "claimed", "done")},
+        "champion": champion(versions, evals, len(nodes)),
+        "memory": {k: len(board.recall(k)) for k in ("fixes", "attacks")},
+        "log_len": len(board.read_log()),
+    }
 
 
 def champion(versions, evals, node_count):
@@ -137,6 +142,6 @@ def open_board(kind=None, **kw):
     if kind == "local":
         return LocalBoard(**kw)
     if kind == "archil":
-        from board_archil import ArchilBoard  # added by the board agent
+        from board_archil import ArchilBoard
         return ArchilBoard(**kw)
     raise ValueError(f"unknown board kind: {kind}")
