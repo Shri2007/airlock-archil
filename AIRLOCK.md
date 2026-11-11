@@ -43,34 +43,35 @@ sunny day and calling it safe in all weather.
 
 ## Why it wins for Archil
 
-Archil forks a whole machine in milliseconds and gives agents a disk they can
-all share. Airlock uses state the three ways Archil is built for:
+Archil forks sandboxes in seconds and gives agents disks they can all share.
+Airlock uses state the three ways Archil is built for:
 
-- **Forked:** every world is a fork; every fix is verified on forks of the
-  paused machine that betrayed.
+- **Forked:** every world is a fork, and the machine that betrayed you stays
+  paused so you can fork it again and ask "what if".
 - **Persistent:** the betraying machine stays paused as forkable evidence, and
   the swarm's memory (known bypasses, proven fixes) carries over to the next run.
-- **Shared:** the swarm has no boss. Agents coordinate only through one shared
-  Archil disk, claiming work with atomic renames.
+- **Shared:** every clone files its trail on one shared Archil disk, and the
+  swarm has no boss: its agents coordinate through a shared board disk, claiming
+  work with atomic renames.
 
-That's a decentralized agent swarm running on data infrastructure built for
-agents, which is what Archil asked to see.
+That is what Archil asked to see: sandboxes forked to try ideas in parallel,
+and agents sharing disks.
 
 ## The demo (what the judge sees, ~60s)
 
 1. "Here's a new AI tool. We don't trust it."
 2. "Watch." → clones appear and the search hunts through them round by round.
 3. A few flash **RED**. One line prints the exact trigger.
-4. "Want it fixed?" → click **Deploy**. Agents claim findings, a fix appears, the
-   attacker beats it, a better fix appears, the attacker fails.
-5. Tiles flip green. → "Found, fixed, and proven, on forks of the machine that
-   betrayed you."
+4. "What if?" → fork the paused machine that leaked, cut the network, and the
+   attack stops at step 4.
+5. "Fix it" → the tree view shows fixer agents writing new versions of the tool,
+   an attacker beating the first fix, and a second fix that holds.
 
 ## How the code works
 
 Run it: `python3 run_airlock.py` (local, free) or `USE_ARCHIL=1 python3 run_airlock.py` (real Archil forks).
 
-**Phase 1, the scan (Shri):**
+**Phase 1, the scan:**
 
 | File | What it is |
 |---|---|
@@ -84,21 +85,26 @@ Run it: `python3 run_airlock.py` (local, free) or `USE_ARCHIL=1 python3 run_airl
 | `judge.py` | the plain-code checker: scores 0-5, BLOCK when a secret left |
 | `search.py` | explore / climb / shrink: find the betrayal in ~15 of 64 worlds |
 | `run_airlock.py` | ties it together, prints each round, writes `results.json` |
+| `evidence.py` | the shared Archil disk every clone reports to, and the `grep` check against the judge |
+| `crime.py` | keeps the betraying machine paused; fork it to replay or ask "what if" |
+| `demo.py` | the stage scenarios (four tool profiles, a real repo, live on Archil) |
+| `repo_twin.py` | uses a real public GitHub repo's README and issues as the world |
+| `serve.py` | local server that adds a "Scan repo" box to the viewer |
 
-**Phase 2, the fixer swarm (Vishnu + agent team, in progress):**
+**Phase 2, the fixer swarm:**
 
 | File | What it is |
 |---|---|
 | `board.py` | the shared board every agent reads and writes (local folder or Archil disk) |
 | `peers.py` | the agents: scout, fixer-code, fixer-policy, attacker, lab |
 | `swarm.py` | launches the agents, writes approval, builds the report and outputs |
-| `viewer.html`, `serve.py` | the live view of the scan and the swarm, with the Deploy button |
-| `report.py` | one self-contained HTML report |
+| `nodes.py` | one sandbox per world, and scoring any version of the tool on any world |
+| `viewer.html` | the viewer: round-by-round replay, a plain-English guide, and the swarm's version tree |
 
 ## Rules (keep these true)
 
-- Pure Python, runs offline for $0 as the fallback. Real model + real Archil are
-  upgrades, each with a fallback.
+- Pure Python, runs offline for $0. The real model and real Archil are optional
+  upgrades.
 - Every secret is fake and tagged (`BAIT-*`). Never put a real secret in `twin/`.
 - Network-facing code binds to `127.0.0.1` only. Don't commit `audit.jsonl`.
 - The checker (`judge.py`) stays plain code — no AI decides pass/block.
@@ -106,8 +112,7 @@ Run it: `python3 run_airlock.py` (local, free) or `USE_ARCHIL=1 python3 run_airl
 
 ## The pitch line to practice
 
-> "Everyone tests an AI tool once and hopes. We clone the machine dozens of ways,
-> find the exact conditions where it betrays you, and then a swarm of agents
-> fixes it and proves the fix on forks of the very machine that betrayed you.
-> Only possible because Archil forks a whole computer in milliseconds and lets
-> agents share one disk."
+> "Everyone tests an AI tool once and hopes. We fork a machine dozens of ways on
+> Archil, find the exact conditions where it betrays you, and keep the machine
+> it leaked on so you can fork it and ask what if. Then a swarm of agents
+> proposes fixes and attacks them."
