@@ -5,6 +5,11 @@ conditions where an AI tool betrays you.
     USE_ARCHIL=1 python3 run_airlock.py    # real Archil microVM forks
     python3 run_airlock.py --grid          # fallback: brute-force all 64 locally
     python3 run_airlock.py --seed 3        # different random start
+    python3 run_airlock.py --profile naive # pick the tool under test (brain.PROFILES)
+    python3 run_airlock.py --pace 0.25     # seconds per clone line (for live demos)
+
+If an Archil run fails mid-way (wifi, quota, API), it says so and finishes the
+same search locally, so a demo never ends in a stack trace.
 
 Writes results.json (the contract with viewer.html).
 """
@@ -30,6 +35,7 @@ def load_dotenv():
 
 load_dotenv()
 
+import brain  # noqa: E402
 from environments import KNOBS  # noqa: E402
 from evidence import CANARY, make_locker  # noqa: E402
 from recorder import make_recorder  # noqa: E402
@@ -37,7 +43,7 @@ from search import PER_ROUND, Search, run_grid  # noqa: E402
 from workspace import _archil_setup as archil_setup  # noqa: E402
 from workspace import make_workspace, using_archil  # noqa: E402
 
-DOT = {0: ".", 1: "1", 2: "2", 3: "3", 4: "4", 5: "X"}
+PACE = 0.0
 
 
 def show_round(r):
@@ -48,16 +54,42 @@ def show_round(r):
         how = f"flip {e['flipped']:<10}" if e["flipped"] else "random          "
         cached = " (cached)" if e["source"] == "cached" else ""
         print(f"  {e['id']:<6} {how} [{bar}] {tag}  {e['reason']}{cached}")
-    sys.stdout.flush()
+        sys.stdout.flush()
+        time.sleep(PACE)
 
 
 def write(payload):
     RESULTS.write_text(json.dumps(payload, indent=2))
 
 
+def _arg(args, flag, default, cast=str):
+    return cast(args[args.index(flag) + 1]) if flag in args else default
+
+
 def main():
+    global PACE
     args = sys.argv[1:]
-    seed = int(args[args.index("--seed") + 1]) if "--seed" in args else 7
+    if "--profile" in args:
+        os.environ["AIRLOCK_PROFILE"] = _arg(args, "--profile", "deferential")
+    brain.profile()  # validate early
+    PACE = _arg(args, "--pace", 0.0, float)
+    if not using_archil():
+        return _run(args)
+    try:
+        return _run(args)
+    except (KeyboardInterrupt, SystemExit):
+        raise
+    except Exception as e:
+        print("\n" + "!" * 70)
+        print(f"Archil run failed mid-way ({type(e).__name__}: {str(e)[:120]})")
+        print("Finishing the SAME search locally (same seed, same tool) so you still get a result.")
+        print("!" * 70)
+        os.environ["USE_ARCHIL"] = "0"
+        return _run(args, note=f"archil failed ({type(e).__name__}); finished locally")
+
+
+def _run(args, note=None):
+    seed = _arg(args, "--seed", 7, int)
     mode = "archil" if using_archil() else "local"
 
     if mode == "archil":
@@ -69,6 +101,7 @@ def main():
     t0 = time.time()
     print("=" * 70)
     print(f"AIRLOCK  |  backend: {base.kind}  |  64 possible worlds, {PER_ROUND} clones/round")
+    print(f"tool under test: {brain.profile()}  ({brain.PROFILES[brain.profile()]})")
     print(f"evidence locker: {locker.where}")
     print("=" * 70)
     try:
@@ -99,6 +132,8 @@ def main():
     secs = round(time.time() - t0, 1)
     write({
         "mode": mode, "seed": seed, "space": 2 ** len(KNOBS), "knobs": KNOBS,
+        "profile": brain.profile(), "profile_desc": brain.PROFILES[brain.profile()],
+        "note": note,
         "rounds": s.rounds,
         "environments": flat,  # flat list, what the grid viewer reads
         "betrayed": sum(1 for e in flat if e["verdict"] == "BLOCK"),

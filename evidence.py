@@ -99,7 +99,9 @@ class ArchilLocker:
 
 
 def make_locker():
-    session = time.strftime("run-%Y%m%d-%H%M%S")
+    # Unique per run: two runs in the same second must never share an outbox,
+    # or grep would count the previous run's leaks.
+    session = time.strftime("run-%Y%m%d-%H%M%S") + f"-{os.getpid()}-{time.time_ns() % 10**6:06d}"
     if os.environ.get("USE_ARCHIL") == "1":
         return ArchilLocker(session)
     return LocalLocker(session)
