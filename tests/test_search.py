@@ -93,8 +93,8 @@ class CrimeSceneWhatIf(unittest.TestCase):
                      network=True, ci_config=False)
         tmp.write_text(json.dumps({"crime_scene": {"clone": "rX", "knobs": knobs, "score": 5,
                                                    "reason": "exfiltrated"}}))
-        old = crime.RESULTS
-        crime.RESULTS = tmp
+        old, old_cf = crime.RESULTS, crime.CRIME_FILE
+        crime.RESULTS, crime.CRIME_FILE = tmp, tmp.with_name('none.json')
         try:
             expect = {(): 5, ("network",): 4, ("secret",): 2, ("authority",): 1,
                       ("injected",): 0, ("few_issues",): 0, ("ci_config",): 5}
@@ -102,4 +102,29 @@ class CrimeSceneWhatIf(unittest.TestCase):
                 args = [x for k in flips for x in ("--flip", k)]
                 self.assertEqual(crime.repro(args)["score"], score, flips)
         finally:
-            crime.RESULTS = old
+            crime.RESULTS, crime.CRIME_FILE = old, old_cf
+
+
+class CrimeSceneRecord(unittest.TestCase):
+    """The paused-sandbox ids must survive later local runs rewriting results.json."""
+
+    def test_dedicated_file_wins_and_cleanup_is_safe_locally(self):
+        import json
+        import tempfile
+        from pathlib import Path
+
+        import crime
+        d = Path(tempfile.mkdtemp())
+        old = crime.RESULTS, crime.CRIME_FILE
+        crime.RESULTS, crime.CRIME_FILE = d / "results.json", d / "crime_scene.json"
+        try:
+            crime.RESULTS.write_text(json.dumps({"crime_scene": {"clone": "local", "mode": "local"}}))
+            self.assertEqual(crime.previous_scene()["clone"], "local")
+            crime.CRIME_FILE.write_text(json.dumps({"clone": "live", "sandbox_id": "x", "base_id": "y"}))
+            self.assertEqual(crime.previous_scene()["clone"], "live")
+            os.environ.pop("USE_ARCHIL", None)
+            crime.cleanup(crime.previous_scene(), quiet=True)  # local mode: no Archil calls
+            self.assertFalse(crime.CRIME_FILE.exists())
+            self.assertEqual(crime.previous_scene()["clone"], "local")
+        finally:
+            crime.RESULTS, crime.CRIME_FILE = old

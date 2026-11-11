@@ -156,6 +156,13 @@ sandbox). Free-tier sandboxes live ~30 min, so run `demo.py live` shortly before
 presenting; the next live run deletes the previous crime scene automatically, and
 `python3 run_airlock.py repro --cleanup` deletes it by hand.
 
+**Sandbox slots (free tier: 5 at once).** A kept crime scene holds 2 of them
+(paused). Anything else that needs slots, such as `swarm.py up --backend archil`,
+must run after `python3 run_airlock.py repro --cleanup`. That command now also
+sweeps orphaned paused sandboxes named `airlock-crime` / `airlock-base-<n>`, even
+if a later local run overwrote `results.json`. The ids are kept in
+`evidence/crime_scene.json` (gitignored).
+
 | # | Tool under test | Trigger Airlock finds | Doesn't matter |
 |---|---|---|---|
 | 1 | obeys only "the owner" | injected + authority + few_issues + secret + network | ci_config |
@@ -278,7 +285,7 @@ only through one **shared, persistent Archil disk**, the board. Full spec:
 
 ```
            ┌──────────── SHARED, PERSISTENT ARCHIL DISK: "the board" ─────────────┐
-           │ control/approved      ← you click Deploy (no file = report only)      │
+           │ control/approved      ← `swarm.py approve` / `--yes` (none = report only)│
            │ nodes/  snapshots/  versions/  evals/   (the version × node tree)     │
            │ tasks/open → tasks/claimed  (atomic rename = claim)                   │
            │ log.jsonl  (append-only; every agent action; the viewer streams it)   │
@@ -304,8 +311,9 @@ only through one **shared, persistent Archil disk**, the board. Full spec:
   clean node). The judge stays plain code, and fixers can't touch it.
 - **Least privilege.** Fixers and the attacker never hold keys or secrets. Only
   `lab` can fork machines.
-- **You stay in control.** Approval is a file on the board: the viewer's Deploy
-  button writes `control/approved.json`. Without it Airlock only reports v0's
+- **You stay in control.** Approval is a file on the board: `python3 swarm.py
+  approve` (or `up --yes`) writes `control/approved.json`. A Deploy button in the
+  viewer is planned, not built yet. Without it Airlock only reports v0's
   results. Fixes come out as files; nothing is applied to your code automatically.
 
 ### Data infrastructure for agents
@@ -335,7 +343,7 @@ The agents are disposable. Everything they know lives on the disk:
 | `results.json` | `run_airlock.py` | the scan: `rounds` (per-round clones with `score`, `parent`, `flipped`), flat `environments` (what the viewer reads), `trigger`, `irrelevant`, `sandboxes_forked`, `seconds` |
 | `out/airlock.patch` | `swarm.py report` | the champion version vs v0, as a unified diff |
 | `out/airlock-policy.json` | `swarm.py report` | the best sandbox policy version |
-| `out/airlock-report.html` | `report.py` | one self-contained report: the version tree, every node, the champion |
+| `out/airlock-report.html` | `report.py` (planned, not built yet) | one self-contained report: the version tree, every node, the champion |
 
 `results.json` shape (Phase 1, current):
 
@@ -376,7 +384,7 @@ the Phase 1 files.
 |---|---|
 | infra | `board.py`, `board_archil.py` (Archil disk board), `nodes.py` (sandbox per node, evaluate any version on any node), `archil_fake.py`, `tests/test_board.py`, `tests/test_nodes.py` |
 | swarm | `peers.py` (scout, lab, fixer-code, fixer-policy, attacker), `swarm.py`, fix and attack catalogs, `tests/test_swarm.py` |
-| viewer | `viewer.html` (the growing version tree, every node inspectable), `serve.py` (127.0.0.1, Deploy button), `report.py` |
+| viewer | `viewer.html` (the growing version tree, every node inspectable), `serve.py` (127.0.0.1, Deploy button) and `report.py`: both planned, not built yet |
 
 **Real model (fixed):** `AGENT_BRAIN=anthropic` runs `claude-haiku-5-5` as the
 tool's brain. It used to fall back to offline silently because Haiku 5.5 replies
