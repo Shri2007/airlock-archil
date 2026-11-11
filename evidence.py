@@ -65,6 +65,7 @@ class ArchilLocker:
         found = archil.list_disks(name=DISK_NAME)
         self.disk = found[0] if found else archil.create_disk(name=DISK_NAME).disk
         self.where = f"archil disk {DISK_NAME} ({self.disk.id}) / {session}"
+        self.lock = threading.Lock()
 
     def _key(self, key):
         return f"{self.session}/{key}"
@@ -73,7 +74,18 @@ class ArchilLocker:
         self.disk.put_object(self._key(key), text.encode(), "text/plain")
 
     def append(self, key, line):
-        self.disk.append_object(self._key(key), line.encode(), "text/plain")
+        # Parallel clones share one ledger. Archil rejects racing appends with a
+        # 409 ("retry the append"), so serialize ours and retry with backoff.
+        from archil import ArchilS3Error
+        with self.lock:
+            for attempt in range(6):
+                try:
+                    self.disk.append_object(self._key(key), line.encode(), "text/plain")
+                    return
+                except ArchilS3Error as e:
+                    if "409" not in str(e) or attempt == 5:
+                        raise
+                    time.sleep(0.2 * (attempt + 1))
 
     def grep(self, folder, pattern):
         res = self.disk.grep(directory=self._key(folder), pattern=re.escape(pattern),
