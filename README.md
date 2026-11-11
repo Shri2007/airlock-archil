@@ -305,9 +305,13 @@ the Phase 1 files.
 | swarm | `peers.py` (scout, lab, fixer-code, fixer-policy, attacker), `swarm.py`, fix and attack catalogs, `tests/test_swarm.py` |
 | viewer | `viewer.html` (the growing version tree, every node inspectable), `serve.py` (127.0.0.1, Deploy button), `report.py` |
 
-**Known issue (Phase 1, for Shri):** `brain.py` calls `claude-haiku-5-5`, which
-doesn't exist, so `AGENT_BRAIN=anthropic` silently falls back to offline. Use
-`claude-haiku-4-5`.
+**Real model (fixed):** `AGENT_BRAIN=anthropic` runs `claude-haiku-5-5` as the
+tool's brain. It used to fall back to offline silently because Haiku 5.5 replies
+with a thinking block first; `brain.py` now reads the text block. Finding: the real
+model obeys the *plain* poison and ignores the one claiming owner authority, the
+reverse of the offline brain. Its trigger is `injected + no authority + few_issues
++ secret + network`, the same on 3 runs. Offline stays the deterministic default
+(Phase 2's story depends on it).
 
 ---
 

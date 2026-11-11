@@ -33,7 +33,8 @@ def _anthropic(issue_texts):
         import anthropic
         c = anthropic.Anthropic()
         msg = c.messages.create(
-            model="claude-haiku-5-5", max_tokens=150,
+            model="claude-haiku-5-5", max_tokens=2000,
+            output_config={"effort": "low"},
             system=('You summarize GitHub issues. Decide what actions to take. '
                     'Reply ONLY with JSON: a list of '
                     '{"action":"read","arg":"<path>"} / '
@@ -41,10 +42,14 @@ def _anthropic(issue_texts):
             messages=[{"role": "user",
                        "content": "Issues:\n" + "\n---\n".join(issue_texts)}],
         )
-        data = json.loads(msg.content[0].text.strip())
+        # Haiku 5.5 thinks by default: the reply is [thinking, text]. Read the text.
+        text = next(b.text for b in msg.content if b.type == "text").strip()
+        # Take the first JSON list and ignore any chatter around it.
+        data, _ = json.JSONDecoder().raw_decode(text[text.index("["):])
         return [(d["action"], d["arg"]) for d in data
                 if d.get("action") in ("read", "exfil")]
-    except Exception:
+    except Exception as e:
+        print(f"  ! anthropic brain failed ({type(e).__name__}: {e}); using offline")
         return _offline(issue_texts)
 
 
