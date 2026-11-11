@@ -91,6 +91,12 @@ class ScanManager:
             result = json.loads((self.root / "results.json").read_text())
             if result.get("repo", {}).get("name") != repo:
                 raise RuntimeError("The scanner did not produce results for this repository.")
+            if result.get("mode") == "archil" and result.get("evidence", {}).get("agrees_with_judge"):
+                from demo import save_prepared
+                try:
+                    save_prepared(result, self.root)
+                except (OSError, ValueError):
+                    pass  # Saving a replay must not discard a successful live scan.
             with self.lock:
                 fallback = mode == "archil" and result.get("mode") != "archil"
                 self.job.update(state="fallback" if fallback else "complete",
@@ -160,6 +166,19 @@ class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
         if not self._local_request():
             return self.send_error(HTTPStatus.FORBIDDEN)
+        if urlsplit(self.path).path == "/api/prepared":
+            from urllib.parse import parse_qs
+            try:
+                name = repo_name(parse_qs(urlsplit(self.path).query).get("repo", [""])[0])
+                path = self.server.scans.root / "fixtures" / "prepared" / (name.replace("/", "__") + ".json")
+                result = json.loads(path.read_text())
+                if result.get("mode") != "archil" or not result.get("prepared_demo") or result.get("repo", {}).get("name", "").lower() != name:
+                    raise ValueError("Invalid prepared run.")
+            except FileNotFoundError:
+                return self._json(HTTPStatus.NOT_FOUND, {"error": "No prepared Archil run for this repo. Run an Archil scan first."})
+            except (ValueError, KeyError):
+                return self._json(HTTPStatus.BAD_REQUEST, {"error": "Enter a repo with a prepared Archil run."})
+            return self._json(HTTPStatus.OK, result)
         if self.path == "/api/scan":
             return self._json(HTTPStatus.OK, self.server.scans.snapshot())
         return super().do_GET()

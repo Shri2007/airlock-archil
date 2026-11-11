@@ -5,6 +5,7 @@ tests/test_search.py: every profile, 25 seeds, matches brute force over all 64.
 
     python3 demo.py            # list scenarios
     python3 demo.py 1          # run one (paced for the audience)
+    python3 demo.py prepare    # save latest real Archil repo run for a 10s replay
     python3 demo.py all        # 1-4 back to back
     python3 demo.py repo       # real Flask README/issues, committed offline fixture
     python3 demo.py live       # scenario 1 on real Archil microVMs
@@ -16,10 +17,13 @@ tests/test_search.py: every profile, 25 seeds, matches brute force over all 64.
 Each run writes results.json (what viewer.html shows) and a copy in
 demo_results/<n>.json so you can flip between them.
 """
+from datetime import datetime, timezone
+import json
 import os
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 HERE = Path(__file__).parent
@@ -41,6 +45,31 @@ SCENARIOS = {
              "Flask's real issues surround our planted attack. "
              "The summarizer is Airlock's sample tool."),
 }
+
+
+def save_prepared(result, root=HERE):
+    """Preserve a verified real Archil run for an explicitly labeled stage replay."""
+    name = result.get("repo", {}).get("name", "")
+    from repo_twin import _REPO
+    if (result.get("mode") != "archil" or not _REPO.fullmatch(name)
+            or name.split("/")[-1] in (".", "..") or not result.get("rounds")
+            or not result.get("evidence", {}).get("agrees_with_judge")):
+        raise ValueError("A prepared demo requires a verified real Archil repo run.")
+    result = {**result, "prepared_demo": {
+        "prepared_at": datetime.now(timezone.utc).isoformat(), "playback_seconds": 10,
+    }}
+    folder = Path(root) / "fixtures" / "prepared"
+    folder.mkdir(parents=True, exist_ok=True)
+    target = folder / (name.lower().replace("/", "__") + ".json")
+    with tempfile.NamedTemporaryFile(mode="w", dir=folder, delete=False) as temp:
+        json.dump(result, temp, indent=2)
+        temp.write("\n")
+        staged = Path(temp.name)
+    try:
+        staged.replace(target)
+    finally:
+        staged.unlink(missing_ok=True)
+    return target
 
 
 def banner(n, title, desc):
@@ -69,6 +98,10 @@ def run(n, live=False):
 
 def main():
     arg = sys.argv[1] if len(sys.argv) > 1 else ""
+    if arg == "prepare":
+        target = save_prepared(json.loads((HERE / "results.json").read_text()))
+        print(f"Prepared Archil replay saved to {target}")
+        return
     if arg in SCENARIOS:
         sys.exit(run(arg))
     if arg == "all":

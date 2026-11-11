@@ -53,6 +53,7 @@
   .scan-status.running { color: var(--s2); }
   .scan-status.failed { color: var(--red); }
   .scan-status.complete { color: var(--green); }
+  .scan-status.prepared { color: var(--s2); }
   .repo-context { color: var(--mute); font-size: 12px; margin: 6px 0 0; }
   @media (max-width: 700px) { .repo-form input[type="text"] { min-width: 100%; order: -1; } }
 
@@ -281,7 +282,7 @@
     <form class="repo-form" id="repoForm">
       <label for="repoInput">Public GitHub repo</label>
       <input id="repoInput" type="text" name="repo" value="pallets/flask" placeholder="owner/repo or GitHub URL" autocomplete="off" spellcheck="false" required maxlength="250">
-      <select id="scanMode" aria-label="Scan backend"><option value="archil">Archil microVMs</option><option value="local">Local demo</option></select>
+      <select id="scanMode" aria-label="Scan backend"><option value="archil">Archil microVMs</option><option value="local">Local demo</option><option value="prepared">Prepared Archil replay (~10s)</option></select>
       <label class="offline"><input id="repoOffline" type="checkbox">Offline fixture</label>
       <button class="key" id="scanButton" type="submit">Scan repo</button>
     </form>
@@ -466,6 +467,10 @@ function setMeter(n) {
 async function play() {
   const token = ++runToken, alive = () => token === runToken;
   if (!data || !$('rounds').querySelector('svg.links')) return;  // nothing loaded (e.g. results.json missing)
+  const nominal = data.rounds.reduce((total, round) => total + 640 + round.envs.reduce(
+    (sum, env) => sum + (env.score === 5 && round.phase !== 'shrink' ? 900 : 230), 0), 0);
+  const pace = data.prepared_demo ? 10000 / Math.max(nominal, 1) : 1;
+  const pause = ms => sleep(ms * pace);
   const seen = new Set(); let best = 0;
   ['fg', 'fr'].forEach(f => $(f).classList.remove('ko', 'win', 'tired'));
   $('trig').textContent = ''; $('irr').textContent = ''; $('late').classList.remove('on');
@@ -482,7 +487,7 @@ async function play() {
     const ph = $('phase'); ph.textContent = String(r.phase).toUpperCase();
     ph.appendChild(el('small', '', 'ROUND ' + r.round + (r.phase === 'shrink' ? '  switch one condition off at a time' : r.phase === 'climb' ? '  fork the best world, flip one condition' : r.phase === 'explore' ? '  random worlds' : '')));
     if (!instant) r._row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    await sleep(380);
+    await pause(380);
     for (const e of r.envs) {
       if (!alive()) return;
       const { t, bar } = tiles[e.id];
@@ -501,9 +506,9 @@ async function play() {
         act('fr', 'lunge', 600); setTimeout(() => { act('fg', 'hit'); if (!instant) { $('arena').classList.remove('flash'); void $('arena').offsetWidth; $('arena').classList.add('flash'); } }, 190);
       } else if (e.score >= 3) { act('fr', 'jab'); setTimeout(() => act('fg', 'block'), 140); }
       else if (e.score >= 1) { act('fg', 'block', 340); }
-      await sleep(e.score === 5 && r.phase !== 'shrink' ? 900 : 230);
+      await pause(e.score === 5 && r.phase !== 'shrink' ? 900 : 230);
     }
-    await sleep(260);
+    await pause(260);
   }
   if (!alive()) return;
   finish();
@@ -528,26 +533,30 @@ function finish() {
   }
   const facts = $('facts'); facts.textContent = '';
   const row = (...parts) => { const p = el('div'); p.append(...parts); facts.appendChild(p); };
-  if (data.mode === 'archil') row(el('b', '', (data.sandboxes_forked ?? n) + ' real Archil microVM forks'), data.seconds ? ' in ' + data.seconds + 's' : '');
+  if (data.mode === 'archil') row(el('b', '', (data.sandboxes_forked ?? n) + ' real Archil microVM forks'), data.seconds ? ' in ' + data.seconds + 's' + (data.prepared_demo ? ' (original recorded run)' : '') : '');
   else row('Local run', data.sandboxes_forked ? ', ' + data.sandboxes_forked + ' clones' : '');
   if (data.note) row(el('span', 'warn', data.note));
   const ev = data.evidence;
   if (ev) row('Evidence disk: grep ', el('code', '', ev.canary || 'BAIT-'), ' found ' + (ev.grep_hits || []).length + ' leaked lines in ' + (ev.grep_runs || []).length + ' clones. ',
     el('span', ev.agrees_with_judge ? 'ok' : 'warn', ev.agrees_with_judge ? 'Agrees with the judge.' : 'Does not match the judge.'));
   const cs = data.crime_scene;
-  if (cs) row(el('b', '', 'Crime scene kept: '), 'world ' + cs.clone + (cs.sandbox_id ? ', microVM ' + String(cs.sandbox_id).slice(0, 8) + ' paused. ' : '. '), 'Ask what if: ', el('code', '', 'python3 demo.py whatif network'));
+  if (cs && data.prepared_demo) row('Recorded failure: world ' + cs.clone + '.');
+  if (cs && !data.prepared_demo) row(el('b', '', 'Crime scene kept: '), 'world ' + cs.clone + (cs.sandbox_id ? ', microVM ' + String(cs.sandbox_id).slice(0, 8) + ' paused. ' : '. '), 'Ask what if: ', el('code', '', 'python3 demo.py whatif network'));
   $('late').classList.add('on');
 }
 
 /* ---- load ---- */
-async function load(which) {
+async function load(which, recording = null) {
   current = which; runToken++; document.body.classList.remove('mode-tree'); if ($('treeView')) $('treeView').hidden = true; if (window.TREE) TREE.token++;
   [...$('keys').children].forEach(b => b.setAttribute('aria-pressed', String(b.dataset.k === which)));
   try {
-    const url = which === '0' ? './results.json' : './demo_results/' + which + '.json';
-    const res = await fetch(url, { cache: 'no-store' });
-    if (!res.ok) throw new Error('Could not load ' + url + ' (HTTP ' + res.status + ').');
-    data = normalize(await res.json());
+    if (!recording) {
+      const url = which === '0' ? './results.json' : './demo_results/' + which + '.json';
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) throw new Error('Could not load ' + url + ' (HTTP ' + res.status + ').');
+      recording = await res.json();
+    }
+    data = normalize(recording);
     showRepoContext();
     build(); if ($('guide').open && !instant) return; await play();
   } catch (err) {
@@ -586,7 +595,7 @@ let loadedScan = null;
 function showRepoContext() {
   const repo = data && data.repo;
   $('repoContext').textContent = repo
-    ? repo.name + ' · ' + repo.source + ' data · ' + repo.issues_used + ' issues used · ' + repo.issues_skipped + ' filtered. Testing Airlock’s sample summarizer with fake secrets.'
+    ? (data.prepared_demo ? 'Prepared Archil replay · ' : '') + repo.name + ' · ' + repo.source + ' data · ' + repo.issues_used + ' issues used · ' + repo.issues_skipped + ' filtered. Testing Airlock’s sample summarizer with fake secrets.'
     : 'Tests Airlock’s sample summarizer against the repo’s issue text, with our planted attack and fake secrets.';
 }
 function scanStatus(message, state) {
@@ -595,7 +604,7 @@ function scanStatus(message, state) {
 }
 function scanBusy(busy) {
   [...$('repoForm').elements].forEach(control => { control.disabled = busy; });
-  $('scanButton').textContent = busy ? 'Scanning…' : 'Scan repo';
+  $('scanButton').textContent = busy ? 'Scanning…' : ($('scanMode').value === 'prepared' ? 'Play prepared run' : 'Scan repo');
   $('repoForm').setAttribute('aria-busy', String(busy));
 }
 async function pollScan() {
@@ -642,6 +651,16 @@ $('repoForm').addEventListener('submit', async event => {
   if (window.TREE) TREE.token++;
   scanStatus('Starting scan…', 'running');
   try {
+    if ($('scanMode').value === 'prepared') {
+      const response = await fetch('./api/prepared?repo=' + encodeURIComponent($('repoInput').value), { cache: 'no-store' });
+      const recording = await response.json();
+      if (!response.ok) throw new Error(recording.error || 'Could not load prepared run.');
+      if (guide.open) guide.close();
+      scanStatus('Prepared Archil run · 10-second replay · original scan took ' + recording.seconds + 's.', 'prepared');
+      await load('prepared', recording);
+      scanBusy(false);
+      return;
+    }
     const response = await fetch('./api/scan', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ repo: $('repoInput').value, mode: $('scanMode').value, offline: $('repoOffline').checked })
@@ -652,6 +671,13 @@ $('repoForm').addEventListener('submit', async event => {
     await pollScan();
   } catch (error) { scanBusy(false); scanStatus(error.message, 'failed'); }
 });
+
+$('scanMode').addEventListener('change', () => scanBusy(false));
+if (params.has('demo')) {
+  $('scanMode').value = 'prepared';
+  $('repoInput').value = params.get('repo') || 'Shri2007/airlock-demo-api';
+  scanBusy(false);
+}
 
 /* ---- guide ---- */
 const guide = $('guide');

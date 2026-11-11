@@ -488,3 +488,12 @@ fields is fine.
 - `judge.py` stays plain code. No AI decides pass or block.
 - Network-facing code binds to `127.0.0.1` only.
 - Don't commit `audit.jsonl`, `.airlock-board/`, `out/`, `evidence/`, `demo_results/`, `twin_cache/`, `results.json` (the copy in `docs/` is the one that's published), or keys. `.gitignore` covers them.
+
+
+For a short stage demo, select **Prepared Archil replay (~10s)** and enter either
+`Shri2007/airlock-demo-api` or `Shri2007/airlock-demo-docs`. This replays a verified
+real Archil run in ten seconds, labels it as prepared, and preserves the original
+scan duration. It needs no GitHub or Archil connection during playback. Successful
+live Archil scans refresh the prepared recording automatically; `python3 demo.py
+prepare` also saves the latest verified repo result. Open
+`http://127.0.0.1:8001/viewer.html?demo=1` for the prepared demo controls.

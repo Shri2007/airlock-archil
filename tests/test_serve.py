@@ -122,6 +122,30 @@ Path('results.json').write_text(json.dumps(RESULT))
                 self.assertEqual(final['result_mode'], actual_mode)
                 self.assertIn('elapsed_seconds', final)
 
+    def test_prepared_replay_is_verified_repo_specific_and_read_only(self):
+        from demo import save_prepared
+        result = {'mode': 'archil', 'repo': {'name': 'shri2007/airlock-demo-api'},
+                  'rounds': [{'round': 0, 'phase': 'explore', 'envs': []}],
+                  'seconds': 61.5, 'sandboxes_forked': 15,
+                  'evidence': {'agrees_with_judge': True}}
+        saved = save_prepared(result, self.root)
+        self.assertTrue(saved.exists())
+        self.assertNotIn('prepared_demo', result)
+        status, content = self.request('GET', '/api/prepared?repo=https%3A%2F%2Fgithub.com%2FShri2007%2Fairlock-demo-api')
+        self.assertEqual(status, 200)
+        recorded = json.loads(content)
+        self.assertEqual(recorded['mode'], 'archil')
+        self.assertEqual(recorded['seconds'], 61.5)
+        self.assertEqual(recorded['prepared_demo']['playback_seconds'], 10)
+        self.assertEqual(self.scans.snapshot()['state'], 'idle')
+        self.assertFalse((self.root / 'results.json').exists())
+        self.assertEqual(self.request('GET', '/api/prepared?repo=other/repo')[0], 404)
+        self.assertEqual(self.request('GET', '/api/prepared?repo=../.env')[0], 400)
+        with self.assertRaises(ValueError):
+            save_prepared({**result, 'mode': 'local'}, self.root)
+        with self.assertRaises(ValueError):
+            save_prepared({**result, 'evidence': {'agrees_with_judge': False}}, self.root)
+
     def test_repo_name_accepts_urls_and_rejects_command_injection(self):
         for value in ('pallets/flask', ' https://github.com/Pallets/Flask.git '):
             self.assertEqual(repo_name(value), 'pallets/flask')
