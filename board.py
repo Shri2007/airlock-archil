@@ -1,0 +1,129 @@
+"""The board: shared state for the fixer swarm (see CONTRACTS.md section 1).
+
+Every peer reads and writes the board; nothing else connects them. LocalBoard
+is a directory. ArchilBoard (Archil disk) is added by the board agent with the
+same methods.
+"""
+import json
+import os
+import shutil
+import threading
+import time
+from pathlib import Path
+
+DEFAULT_ROOT = Path(__file__).parent / ".airlock-board"
+_LOG = "log.jsonl"
+_MEMORY = "memory"
+
+
+class LocalBoard:
+    kind = "local"
+
+    def __init__(self, root=DEFAULT_ROOT):
+        self.root = Path(root)
+        self.root.mkdir(parents=True, exist_ok=True)
+        self._lock = threading.Lock()
+
+    def _p(self, path):
+        return self.root / path
+
+    def put(self, path, obj):
+        p = self._p(path)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        tmp = p.with_name(p.name + f".tmp{os.getpid()}.{threading.get_ident()}")
+        tmp.write_text(json.dumps(obj, indent=2))
+        os.replace(tmp, p)
+
+    def get(self, path):
+        try:
+            return json.loads(self._p(path).read_text())
+        except FileNotFoundError:
+            return None
+
+    def exists(self, path):
+        return self._p(path).exists()
+
+    def list(self, prefix):
+        base = self._p(prefix)
+        if not base.exists():
+            return []
+        return sorted(str(p.relative_to(self.root)) for p in base.rglob("*")
+                      if p.is_file() and ".tmp" not in p.name)
+
+    def delete(self, path):
+        try:
+            self._p(path).unlink()
+        except FileNotFoundError:
+            pass
+
+    def claim(self, src, dst):
+        d = self._p(dst)
+        d.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            os.rename(self._p(src), d)
+            return True
+        except FileNotFoundError:
+            return False
+
+    def log(self, agent, event, **data):
+        with self._lock:
+            seq = len(self.read_log())
+            line = {"seq": seq, "ts": time.time(), "agent": agent, "event": event, **data}
+            with open(self._p(_LOG), "a") as f:
+                f.write(json.dumps(line) + "\n")
+
+    def read_log(self, since=0):
+        try:
+            lines = self._p(_LOG).read_text().splitlines()
+        except FileNotFoundError:
+            return []
+        return [json.loads(l) for l in lines[since:] if l.strip()]
+
+    def remember(self, kind, obj):
+        p = self._p(f"{_MEMORY}/{kind}.jsonl")
+        p.parent.mkdir(parents=True, exist_ok=True)
+        with open(p, "a") as f:
+            f.write(json.dumps(obj) + "\n")
+
+    def recall(self, kind):
+        try:
+            lines = self._p(f"{_MEMORY}/{kind}.jsonl").read_text().splitlines()
+        except FileNotFoundError:
+            return []
+        return [json.loads(l) for l in lines if l.strip()]
+
+    def reset_run(self):
+        for child in self.root.iterdir():
+            if child.name == _MEMORY:
+                continue
+            if child.is_dir():
+                shutil.rmtree(child)
+            else:
+                child.unlink()
+
+    def snapshot(self):
+        names = lambda d: [p.rsplit("/", 1)[-1] for p in self.list(f"tasks/{d}")]
+        recs = lambda prefix: [self.get(p) for p in self.list(prefix)]
+        return {
+            "control": {"approved": self.get("control/approved.json"),
+                        "done": self.get("control/done.json")},
+            "scan": self.get("scan/results.json") or {},
+            "findings": recs("findings"),
+            "tasks": {d: names(d) for d in ("open", "claimed", "done")},
+            "candidates": recs("candidates"),
+            "attacks": recs("attacks"),
+            "verdicts": recs("verdicts"),
+            "repro": recs("repro"),
+            "memory": {k: len(self.recall(k)) for k in ("fixes", "attacks")},
+            "log_len": len(self.read_log()),
+        }
+
+
+def open_board(kind=None, **kw):
+    kind = kind or os.environ.get("AIRLOCK_BOARD", "local")
+    if kind == "local":
+        return LocalBoard(**kw)
+    if kind == "archil":
+        from board_archil import ArchilBoard  # added by the board agent
+        return ArchilBoard(**kw)
+    raise ValueError(f"unknown board kind: {kind}")

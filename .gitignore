@@ -5,3 +5,5 @@ results.json
 .env
 .DS_Store
 results.sample.json
+.airlock-board/
+out/

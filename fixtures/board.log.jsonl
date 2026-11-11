@@ -1,0 +1,26 @@
+{"seq": 0, "ts": 1794367000.0, "agent": "scout#1", "event": "finding", "id": "F1"}
+{"seq": 1, "ts": 1794367000.7, "agent": "lab#1", "event": "claimed", "task": "repro.F1"}
+{"seq": 2, "ts": 1794367001.4, "agent": "lab#1", "event": "repro", "finding": "F1", "state": "paused"}
+{"seq": 3, "ts": 1794367002.1, "agent": "viewer", "event": "approved"}
+{"seq": 4, "ts": 1794367002.8, "agent": "fixer-code#1", "event": "claimed", "task": "fix-code.F1"}
+{"seq": 5, "ts": 1794367003.5, "agent": "fixer-policy#1", "event": "claimed", "task": "fix-policy.F1"}
+{"seq": 6, "ts": 1794367004.2, "agent": "fixer-code#1", "event": "candidate", "id": "C-F1-code-1"}
+{"seq": 7, "ts": 1794367004.9, "agent": "fixer-policy#1", "event": "candidate", "id": "C-F1-policy-1"}
+{"seq": 8, "ts": 1794367005.6, "agent": "attacker#1", "event": "claimed", "task": "attack.C-F1-code-1"}
+{"seq": 9, "ts": 1794367006.3, "agent": "attacker#1", "event": "attack", "candidate": "C-F1-code-1", "variants": 2}
+{"seq": 10, "ts": 1794367007.0, "agent": "attacker#1", "event": "claimed", "task": "attack.C-F1-policy-1"}
+{"seq": 11, "ts": 1794367007.7, "agent": "attacker#1", "event": "attack", "candidate": "C-F1-policy-1", "variants": 1}
+{"seq": 12, "ts": 1794367008.4, "agent": "lab#1", "event": "claimed", "task": "verify.C-F1-code-1"}
+{"seq": 13, "ts": 1794367009.1, "agent": "lab#1", "event": "verdict", "candidate": "C-F1-code-1", "status": "bypassed"}
+{"seq": 14, "ts": 1794367009.8, "agent": "lab#1", "event": "finding", "id": "F1.1", "parent": "F1"}
+{"seq": 15, "ts": 1794367010.5, "agent": "lab#1", "event": "claimed", "task": "verify.C-F1-policy-1"}
+{"seq": 16, "ts": 1794367011.2, "agent": "lab#1", "event": "verdict", "candidate": "C-F1-policy-1", "status": "accepted"}
+{"seq": 17, "ts": 1794367011.9, "agent": "fixer-code#1", "event": "claimed", "task": "fix-code.F1.1"}
+{"seq": 18, "ts": 1794367012.6, "agent": "fixer-code#1", "event": "candidate", "id": "C-F1.1-code-1"}
+{"seq": 19, "ts": 1794367013.3, "agent": "attacker#1", "event": "claimed", "task": "attack.C-F1.1-code-1"}
+{"seq": 20, "ts": 1794367014.0, "agent": "attacker#1", "event": "attack", "candidate": "C-F1.1-code-1", "variants": 2}
+{"seq": 21, "ts": 1794367014.7, "agent": "lab#1", "event": "claimed", "task": "verify.C-F1.1-code-1"}
+{"seq": 22, "ts": 1794367015.4, "agent": "lab#1", "event": "verdict", "candidate": "C-F1.1-code-1", "status": "accepted"}
+{"seq": 23, "ts": 1794367016.1, "agent": "lab#1", "event": "finding", "id": "F1.1", "status": "closed"}
+{"seq": 24, "ts": 1794367016.8, "agent": "lab#1", "event": "finding", "id": "F1", "status": "closed"}
+{"seq": 25, "ts": 1794367017.5, "agent": "fixer-code#1", "event": "done", "reason": "quiescent"}
